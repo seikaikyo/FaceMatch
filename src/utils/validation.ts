@@ -99,3 +99,46 @@ export const qualificationQuerySchema = paginationSchema.keys({
   qualificationType: Joi.string().optional(),
   personId: mongoIdSchema.optional()
 });
+
+// 施工單相關
+export const createWorkOrderSchema = Joi.object({
+  orderNumber: Joi.string().max(50).uppercase().required(),
+  title: Joi.string().max(200).required(),
+  description: Joi.string().max(2000).optional(),
+  contractorId: mongoIdSchema.optional(), // 承攬商用戶自動設定
+  siteLocation: Joi.string().max(200).required(),
+  workType: Joi.string().max(100).required(),
+  riskLevel: Joi.string().valid('LOW', 'MEDIUM', 'HIGH').default('MEDIUM'),
+  plannedStartTime: Joi.date().required(),
+  plannedEndTime: Joi.date().greater(Joi.ref('plannedStartTime')).required(),
+  applicantName: Joi.string().max(100).optional()
+});
+
+export const updateWorkOrderSchema = createWorkOrderSchema.fork(Object.keys(createWorkOrderSchema.describe().keys), (schema) => schema.optional());
+
+export const assignPersonSchema = Joi.object({
+  personId: mongoIdSchema.required(),
+  role: Joi.string().max(100).required(),
+  accessLevel: Joi.string().valid('BASIC', 'SUPERVISOR', 'MANAGER').default('BASIC')
+});
+
+export const addScheduleSchema = Joi.object({
+  scheduleName: Joi.string().max(200).required(),
+  startTime: Joi.date().required(),
+  endTime: Joi.date().greater(Joi.ref('startTime')).required(),
+  dayOfWeek: Joi.array().items(Joi.number().min(0).max(6)).optional(),
+  isRecurring: Joi.boolean().default(false),
+  accessAreas: Joi.array().items(Joi.string().max(100)).default([])
+});
+
+// 簽核相關
+export const approvalActionSchema = Joi.object({
+  action: Joi.string().valid('APPROVED', 'REJECTED').required(),
+  comments: Joi.string().max(1000).optional()
+});
+
+export const workOrderQuerySchema = paginationSchema.keys({
+  status: Joi.string().valid('DRAFT', 'SUBMITTED', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED').optional(),
+  contractorId: mongoIdSchema.optional(),
+  applicantId: mongoIdSchema.optional()
+});
