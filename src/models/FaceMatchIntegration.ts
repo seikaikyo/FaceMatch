@@ -84,8 +84,7 @@ const faceMatchIntegrationSchema = new Schema<IFaceMatchIntegration>({
   timestamps: true
 });
 
-// 索引
-faceMatchIntegrationSchema.index({ workOrderId: 1 });
+// 索引 (workOrderId 已通過 unique: true 自動建立)
 faceMatchIntegrationSchema.index({ integrationStatus: 1 });
 faceMatchIntegrationSchema.index({ lastSyncAt: 1 });
 faceMatchIntegrationSchema.index({ 'personSyncStatuses.personId': 1 });

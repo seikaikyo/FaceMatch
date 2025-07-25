@@ -55,9 +55,7 @@ const userSchema = new Schema<IUser>({
   timestamps: true
 });
 
-// 索引
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
+// 索引 (username 和 email 已通過 unique: true 自動建立)
 userSchema.index({ role: 1 });
 userSchema.index({ contractorId: 1 });
 

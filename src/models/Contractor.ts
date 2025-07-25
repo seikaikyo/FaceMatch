@@ -46,8 +46,7 @@ const contractorSchema = new Schema<IContractor>({
   timestamps: true
 });
 
-// 索引
-contractorSchema.index({ code: 1 });
+// 索引 (code 已通過 unique: true 自動建立)
 contractorSchema.index({ status: 1 });
 contractorSchema.index({ contractValidTo: 1 });
 

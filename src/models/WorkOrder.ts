@@ -212,8 +212,7 @@ const workOrderSchema = new Schema<IWorkOrder>({
   timestamps: true
 });
 
-// 索引
-workOrderSchema.index({ orderNumber: 1 });
+// 索引 (orderNumber 已通過 unique: true 自動建立)
 workOrderSchema.index({ contractorId: 1 });
 workOrderSchema.index({ status: 1 });
 workOrderSchema.index({ currentApprovalLevel: 1 });
