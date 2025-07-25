@@ -1,8 +1,10 @@
 import { WorkOrder, User } from '../models';
 import { IWorkOrder, IApprovalRecord } from '../types';
+import { FaceMatchSyncService } from './FaceMatchSyncService';
 import logger from '../utils/logger';
 
 export class ApprovalService {
+  private static faceMatchSyncService = new FaceMatchSyncService();
   /**
    * 提交施工單申請
    */
@@ -165,8 +167,14 @@ export class ApprovalService {
         comments
       });
 
-      // TODO: 觸發 FaceMatch 同步
-      // await FaceMatchSyncService.syncWorkOrder(workOrder._id);
+      // 觸發 FaceMatch 同步
+      try {
+        await this.faceMatchSyncService.syncWorkOrder(workOrder._id.toString());
+        logger.info(`FaceMatch 同步已觸發: ${workOrder.orderNumber}`);
+      } catch (syncError) {
+        logger.error(`FaceMatch 同步失敗: ${workOrder.orderNumber}`, syncError);
+        // 同步失敗不影響審核流程，只記錄錯誤
+      }
     } else {
       // 拒絕申請
       workOrder.status = 'REJECTED';
