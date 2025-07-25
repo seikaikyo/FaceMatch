@@ -60,11 +60,11 @@ const startServer = async () => {
     await seedDatabase();
     
     // 啟動伺服器
-    app.listen(config.port, () => {
-      logger.info(`🚀 伺服器已啟動在 http://localhost:${config.port}`);
+    app.listen(config.port, '0.0.0.0', () => {
+      logger.info(`🚀 伺服器已啟動在 http://0.0.0.0:${config.port}`);
       logger.info(`📝 環境: ${config.nodeEnv}`);
       logger.info(`🏢 系統: ${config.system.siteName} v${config.system.siteVersion}`);
-      logger.info(`🔗 API 文件: http://localhost:${config.port}/health`);
+      logger.info(`🔗 本機存取: http://localhost:${config.port}/health`);
     });
   } catch (error) {
     logger.error('伺服器啟動失敗:', error);
