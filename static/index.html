@@ -268,9 +268,19 @@
         <div id="mainSystem" class="container hidden">
             <div class="header">
                 <h1>FaceMatch 極簡管理系統</h1>
-                <p>歡迎，<span id="userName">管理員</span> | 
-                   <button id="logoutBtn" style="background: none; border: 1px solid white; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">登出</button>
-                </p>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span>當前角色:</span>
+                        <select id="currentRole" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;" onchange="switchRole()">
+                            <option value="管理員">管理員</option>
+                            <option value="職環安">職環安</option>
+                            <option value="再生經理">再生經理</option>
+                        </select>
+                    </div>
+                    <p style="margin: 0;">歡迎，<span id="userName">管理員</span> | 
+                       <button id="logoutBtn" style="background: none; border: 1px solid white; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">登出</button>
+                    </p>
+                </div>
             </div>
             
             <div class="nav">
@@ -438,7 +448,14 @@
                     <!-- 施工單詳情 -->
                     <div class="approval-info">
                         <h4>施工單資訊</h4>
-                        <div id="workOrderDetails"></div>
+                        <div id="workOrderDetails">
+                            <div><strong>施工單號:</strong> <span id="approvalOrderNumber">-</span></div>
+                            <div><strong>工程標題:</strong> <span id="approvalOrderTitle">-</span></div>
+                            <div><strong>承攬商:</strong> <span id="approvalContractor">-</span></div>
+                            <div><strong>施工地點:</strong> <span id="approvalLocation">-</span></div>
+                            <div><strong>簽核進度:</strong> <span id="approvalCurrentLevel">-</span></div>
+                            <div><strong>目前簽核者:</strong> <span id="approvalCurrentApprover">-</span></div>
+                        </div>
                     </div>
                     
                     <!-- 簽核歷史 -->
@@ -878,12 +895,30 @@
         }
 
         function fillForm(type, item) {
-            Object.keys(item).forEach(key => {
-                const element = document.getElementById(`${type}${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                if (element) {
-                    element.value = item[key];
-                }
-            });
+            // 根據不同類型的表單欄位來填充數據
+            if (type === 'contractor') {
+                document.getElementById('contractorName').value = item.name || '';
+                document.getElementById('contractorCode').value = item.code || '';
+                document.getElementById('contractorContact').value = item.contact || '';
+                document.getElementById('contractorPhone').value = item.phone || '';
+                document.getElementById('contractorStatus').value = item.status || 'ACTIVE';
+            } else if (type === 'workorder') {
+                document.getElementById('workorderOrderNumber').value = item.orderNumber || '';
+                document.getElementById('workorderTitle').value = item.title || '';
+                document.getElementById('workorderContractorId').value = item.contractorId || '';
+                document.getElementById('workorderLocation').value = item.location || '';
+                document.getElementById('workorderStatus').value = item.status || 'PENDING';
+            } else if (type === 'qualification') {
+                document.getElementById('qualificationPersonName').value = item.personName || '';
+                document.getElementById('qualificationType').value = item.type || 'SAFETY';
+                document.getElementById('qualificationName').value = item.name || '';
+                document.getElementById('qualificationValidTo').value = item.validTo ? item.validTo.split('T')[0] : '';
+                document.getElementById('qualificationStatus').value = item.status || 'VALID';
+            } else if (type === 'facematch') {
+                document.getElementById('facematchPersonName').value = item.personName || '';
+                document.getElementById('facematchWorkOrderId').value = item.workOrderId || '';
+                document.getElementById('facematchStatus').value = item.status || 'PENDING';
+            }
         }
 
         // 表單提交事件
@@ -997,6 +1032,51 @@
 
         // 簽核功能相關變數
         let currentApprovalId = null;
+        let currentUserRole = '管理員';
+
+        // 角色切換功能
+        function switchRole() {
+            const roleSelect = document.getElementById('currentRole');
+            currentUserRole = roleSelect.value;
+            document.getElementById('userName').textContent = currentUserRole;
+            
+            // 根據角色顯示/隱藏功能
+            updateUIForRole();
+            
+            console.log(`已切換到角色: ${currentUserRole}`);
+        }
+
+        function updateUIForRole() {
+            const isManager = currentUserRole === '管理員';
+            const isJobSafety = currentUserRole === '職環安';
+            const isRegenManager = currentUserRole === '再生經理';
+            
+            // 管理員可以看到所有功能
+            // 職環安和再生經理只能看到待簽核清單和相關功能
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                const tab = btn.dataset.tab;
+                if (!isManager && (tab === 'contractors' || tab === 'qualifications' || tab === 'facematch')) {
+                    btn.style.display = 'none';
+                } else {
+                    btn.style.display = 'block';
+                }
+            });
+            
+            // 如果當前是非管理員角色且在被隱藏的頁面，自動切換到待簽核清單
+            if (!isManager) {
+                const currentTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+                if (currentTab === 'contractors' || currentTab === 'qualifications' || currentTab === 'facematch') {
+                    // 切換到待簽核清單
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('[data-tab="approvals"]').classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(content => hideElement(content));
+                    showElement(document.getElementById('approvals'));
+                    currentTab = 'approvals';
+                    loadData();
+                }
+            }
+        }
 
         // 載入待簽核清單
         async function loadPendingApprovals() {
@@ -1013,24 +1093,39 @@
         // 渲染待簽核清單
         function renderPendingApprovals(approvals) {
             const table = document.getElementById('approvalsTable');
-            if (approvals.length === 0) {
-                table.innerHTML = '<tr><td colspan="7">沒有待簽核的施工單</td></tr>';
+            
+            // 根據當前角色過濾待簽核項目
+            let filteredApprovals = approvals;
+            if (currentUserRole !== '管理員') {
+                filteredApprovals = approvals.filter(order => order.currentApprover === currentUserRole);
+            }
+            
+            if (filteredApprovals.length === 0) {
+                const message = currentUserRole === '管理員' 
+                    ? '沒有待簽核的施工單' 
+                    : `沒有需要${currentUserRole}簽核的施工單`;
+                table.innerHTML = `<tr><td colspan="7">${message}</td></tr>`;
                 return;
             }
 
-            table.innerHTML = approvals.map(order => `
-                <tr>
-                    <td>${order.orderNumber}</td>
-                    <td>${order.title}</td>
-                    <td>${order.contractorName}</td>
-                    <td>${order.location}</td>
-                    <td>${order.currentApprover}</td>
-                    <td>${order.approvalLevel}/${order.totalLevels}</td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewApprovalDetails(${order.id})">查看詳情</button>
-                    </td>
-                </tr>
-            `).join('');
+            table.innerHTML = filteredApprovals.map(order => {
+                const canApprove = currentUserRole === '管理員' || order.currentApprover === currentUserRole;
+                const actionButton = canApprove 
+                    ? `<button class="btn btn-primary" onclick="viewApprovalDetails(${order.id})">查看詳情</button>`
+                    : `<span style="color: #999;">非您的簽核項目</span>`;
+                
+                return `
+                    <tr>
+                        <td>${order.orderNumber}</td>
+                        <td>${order.title}</td>
+                        <td>${order.contractorName}</td>
+                        <td>${order.location}</td>
+                        <td>${order.currentApprover}</td>
+                        <td>${order.approvalLevel}/${order.totalLevels}</td>
+                        <td>${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // 查看簽核詳情
@@ -1041,6 +1136,9 @@
                 // 載入施工單詳情
                 const orderData = await apiCall(`${API_BASE}/work-orders`);
                 const order = orderData.data.find(o => o.id === id);
+                
+                // 檢查權限
+                const canApprove = currentUserRole === '管理員' || order.currentApprover === currentUserRole;
                 
                 // 載入簽核歷史
                 const historyData = await apiCall(`${API_BASE}/work-orders/${id}/history`);
@@ -1068,6 +1166,15 @@
                     
                     document.getElementById('approvalHistory').innerHTML = historyHtml;
                     
+                    // 根據權限顯示/隱藏簽核按鈕
+                    const approvalActions = document.querySelector('.approval-actions');
+                    const approvalSection = document.querySelector('.approval-section:last-child');
+                    if (canApprove) {
+                        approvalSection.style.display = 'block';
+                    } else {
+                        approvalSection.style.display = 'none';
+                    }
+                    
                     // 顯示簽核模態框
                     showElement(document.getElementById('approvalModal'));
                 }
@@ -1084,7 +1191,7 @@
             }
 
             const comment = document.getElementById('approvalComment').value.trim();
-            const approver = currentUser ? currentUser.name : '管理員';
+            const approver = currentUserRole || '管理員';
 
             try {
                 const data = await apiCall(`${API_BASE}/work-orders/${currentApprovalId}/approve`, {
