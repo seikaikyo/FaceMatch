@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
 const { Client } = require('ldapts');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const port = 5001;
@@ -80,7 +81,13 @@ const Qualification = sequelize.define('Qualification', {
   type: { type: DataTypes.ENUM('SAFETY', 'TECHNICAL'), allowNull: false },
   name: { type: DataTypes.STRING, allowNull: false },
   validTo: DataTypes.DATE,
-  status: { type: DataTypes.ENUM('VALID', 'EXPIRES_SOON', 'EXPIRED'), defaultValue: 'VALID' }
+  status: { type: DataTypes.ENUM('VALID', 'EXPIRES_SOON', 'EXPIRED', 'SUSPENDED'), defaultValue: 'VALID' },
+  lastRenewedAt: DataTypes.DATE,
+  lastRenewedBy: DataTypes.STRING,
+  suspendedAt: DataTypes.DATE,
+  suspendedBy: DataTypes.STRING,
+  suspendReason: DataTypes.TEXT,
+  renewalNotes: DataTypes.TEXT
 });
 
 const FaceMatchRecord = sequelize.define('FaceMatchRecord', {
@@ -98,7 +105,20 @@ const User = sequelize.define('User', {
   role: { type: DataTypes.ENUM('管理員', '職環安', '再生經理', '一般使用者'), defaultValue: '一般使用者' },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
   lastLogin: DataTypes.DATE,
-  authType: { type: DataTypes.ENUM('LOCAL', 'AD'), defaultValue: 'LOCAL' }
+  authType: { type: DataTypes.ENUM('LOCAL', 'AD'), defaultValue: 'LOCAL' },
+  // 新增欄位
+  jobTitle: DataTypes.STRING, // 職稱
+  phoneNumber: DataTypes.STRING, // 電話
+  employeeId: DataTypes.STRING, // 員工編號
+  approvalLevel: DataTypes.INTEGER, // 可簽核的層級 (1=職環安, 2=再生經理, 3=總經理)
+  canApprove: { type: DataTypes.BOOLEAN, defaultValue: false }, // 是否有簽核權限
+  // 本地帳號密碼 (僅限 LOCAL 類型)
+  passwordHash: DataTypes.STRING,
+  // AD 相關
+  adGroups: DataTypes.TEXT, // AD 群組 (JSON 格式)
+  lastADSync: DataTypes.DATE, // 最後 AD 同步時間
+  // 備註
+  notes: DataTypes.TEXT
 });
 
 // 關聯定義
@@ -191,11 +211,64 @@ async function initializeDatabase() {
 
     console.log('🌱 初始化測試數據...');
 
-    // 創建測試使用者
+    // 創建測試使用者 (包含密碼雜湊)
+    const saltRounds = 10;
     await User.bulkCreate([
-      { username: 'admin', displayName: '系統管理員', role: '管理員', authType: 'LOCAL' },
-      { username: 'safety', displayName: '職環安專員', role: '職環安', authType: 'LOCAL' },
-      { username: 'manager', displayName: '再生經理', role: '再生經理', authType: 'LOCAL' }
+      { 
+        username: 'admin', 
+        displayName: '系統管理員', 
+        email: 'admin@company.com',
+        department: 'IT部門',
+        jobTitle: '系統管理員',
+        employeeId: 'EMP001',
+        role: '管理員', 
+        authType: 'LOCAL',
+        canApprove: true,
+        approvalLevel: 999, // 管理員可以簽核所有層級
+        passwordHash: await bcrypt.hash('admin123', saltRounds),
+        phoneNumber: '02-1234-5678'
+      },
+      { 
+        username: 'safety', 
+        displayName: '職環安專員', 
+        email: 'safety@company.com',
+        department: '職業安全衛生室',
+        jobTitle: '職環安專員',
+        employeeId: 'EMP002',
+        role: '職環安', 
+        authType: 'LOCAL',
+        canApprove: true,
+        approvalLevel: 1, // 第一層簽核
+        passwordHash: await bcrypt.hash('safety123', saltRounds),
+        phoneNumber: '02-1234-5679'
+      },
+      { 
+        username: 'manager', 
+        displayName: '再生經理', 
+        email: 'manager@company.com',
+        department: '再生事業部',
+        jobTitle: '部門經理',
+        employeeId: 'EMP003',
+        role: '再生經理', 
+        authType: 'LOCAL',
+        canApprove: true,
+        approvalLevel: 2, // 第二層簽核
+        passwordHash: await bcrypt.hash('manager123', saltRounds),
+        phoneNumber: '02-1234-5680'
+      },
+      {
+        username: 'user001',
+        displayName: '一般使用者',
+        email: 'user001@company.com',
+        department: '營運部門',
+        jobTitle: '業務專員',
+        employeeId: 'EMP004',
+        role: '一般使用者',
+        authType: 'LOCAL',
+        canApprove: false,
+        passwordHash: await bcrypt.hash('user123', saltRounds),
+        phoneNumber: '02-1234-5681'
+      }
     ]);
 
     // 創建承攬商
@@ -309,13 +382,24 @@ app.post('/api/login', async (req, res) => {
         await user.update({ lastLogin: new Date() });
       }
     } else {
-      // 本地驗證 (測試用)
-      if (username === 'admin' && password === 'admin123') {
-        userInfo = { username: 'admin', displayName: '系統管理員', role: '管理員', authType: 'LOCAL' };
-      } else if (username === 'safety' && password === 'safety123') {
-        userInfo = { username: 'safety', displayName: '職環安專員', role: '職環安', authType: 'LOCAL' };
-      } else if (username === 'manager' && password === 'manager123') {
-        userInfo = { username: 'manager', displayName: '再生經理', role: '再生經理', authType: 'LOCAL' };
+      // 本地驗證 (使用資料庫)
+      const user = await User.findOne({ where: { username, authType: 'LOCAL', isActive: true } });
+      if (user && user.passwordHash) {
+        const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+        if (isValidPassword) {
+          userInfo = {
+            username: user.username,
+            displayName: user.displayName,
+            role: user.role,
+            authType: user.authType,
+            email: user.email,
+            department: user.department,
+            canApprove: user.canApprove,
+            approvalLevel: user.approvalLevel
+          };
+          // 更新最後登入時間
+          await user.update({ lastLogin: new Date() });
+        }
       }
     }
 
@@ -656,6 +740,108 @@ app.delete('/api/qualifications/:id', async (req, res) => {
   }
 });
 
+// 快速續約年度資格
+app.post('/api/qualifications/:id/quick-renew', async (req, res) => {
+  try {
+    const { renewalPeriod, renewalNotes, renewedBy } = req.body;
+    const qualification = await Qualification.findByPk(req.params.id);
+    
+    if (!qualification) {
+      return res.status(404).json({ success: false, message: '資格不存在' });
+    }
+
+    // 計算新的到期日 (以現有到期日為基準，加上續約期限)
+    const currentValidTo = new Date(qualification.validTo);
+    const newValidTo = new Date(currentValidTo);
+    newValidTo.setFullYear(newValidTo.getFullYear() + (renewalPeriod || 1));
+
+    await qualification.update({
+      validTo: newValidTo,
+      status: 'VALID',
+      lastRenewedAt: new Date(),
+      lastRenewedBy: renewedBy || '系統管理員',
+      renewalNotes: renewalNotes || '快速續約',
+      suspendedAt: null,
+      suspendedBy: null,
+      suspendReason: null
+    });
+
+    res.json({ 
+      success: true, 
+      data: qualification,
+      message: `資格已續約至 ${newValidTo.toLocaleDateString('zh-TW')}`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 快速停用年度資格
+app.post('/api/qualifications/:id/quick-suspend', async (req, res) => {
+  try {
+    const { suspendReason, suspendedBy } = req.body;
+    const qualification = await Qualification.findByPk(req.params.id);
+    
+    if (!qualification) {
+      return res.status(404).json({ success: false, message: '資格不存在' });
+    }
+
+    await qualification.update({
+      status: 'SUSPENDED',
+      suspendedAt: new Date(),
+      suspendedBy: suspendedBy || '系統管理員',
+      suspendReason: suspendReason || '管理員停用'
+    });
+
+    res.json({ 
+      success: true, 
+      data: qualification,
+      message: '資格已停用'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 重新啟用年度資格
+app.post('/api/qualifications/:id/reactivate', async (req, res) => {
+  try {
+    const { reactivatedBy, notes } = req.body;
+    const qualification = await Qualification.findByPk(req.params.id);
+    
+    if (!qualification) {
+      return res.status(404).json({ success: false, message: '資格不存在' });
+    }
+
+    // 檢查到期日決定狀態
+    const now = new Date();
+    const validTo = new Date(qualification.validTo);
+    let newStatus = 'VALID';
+    
+    if (validTo < now) {
+      newStatus = 'EXPIRED';
+    } else if (validTo - now < 30 * 24 * 60 * 60 * 1000) { // 30天內到期
+      newStatus = 'EXPIRES_SOON';
+    }
+
+    await qualification.update({
+      status: newStatus,
+      suspendedAt: null,
+      suspendedBy: null,
+      suspendReason: null,
+      renewalNotes: notes || '重新啟用'
+    });
+
+    res.json({ 
+      success: true, 
+      data: qualification,
+      message: '資格已重新啟用'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // FaceMatch 整合 CRUD (保持原有邏輯)
 app.get('/api/facematch', async (req, res) => {
   try {
@@ -695,6 +881,159 @@ app.delete('/api/facematch/:id', async (req, res) => {
   try {
     await FaceMatchRecord.destroy({ where: { id: req.params.id } });
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 使用者管理 CRUD
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.findAll({ 
+      attributes: { exclude: ['passwordHash'] }, // 不返回密碼雜湊
+      order: [['createdAt', 'DESC']] 
+    });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const userData = { ...req.body };
+    
+    // 如果是本地帳號且有提供密碼，進行雜湊
+    if (userData.authType === 'LOCAL' && userData.password) {
+      const saltRounds = 10;
+      userData.passwordHash = await bcrypt.hash(userData.password, saltRounds);
+      delete userData.password; // 移除明文密碼
+    }
+    
+    const user = await User.create(userData);
+    
+    // 返回時排除密碼雜湊
+    const { passwordHash, ...userResponse } = user.toJSON();
+    res.json({ success: true, data: userResponse });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '使用者不存在' });
+    }
+    
+    const updateData = { ...req.body };
+    
+    // 如果有提供新密碼，進行雜湊
+    if (updateData.password) {
+      const saltRounds = 10;
+      updateData.passwordHash = await bcrypt.hash(updateData.password, saltRounds);
+      delete updateData.password;
+    }
+    
+    await user.update(updateData);
+    
+    // 返回時排除密碼雜湊
+    const { passwordHash, ...userResponse } = user.toJSON();
+    res.json({ success: true, data: userResponse });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '使用者不存在' });
+    }
+    
+    // 檢查是否為系統管理員
+    if (user.role === '管理員' && user.username === 'admin') {
+      return res.status(400).json({ success: false, message: '無法刪除預設管理員帳號' });
+    }
+    
+    await User.destroy({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 重設使用者密碼
+app.post('/api/users/:id/reset-password', async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const user = await User.findByPk(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: '使用者不存在' });
+    }
+    
+    if (user.authType !== 'LOCAL') {
+      return res.status(400).json({ success: false, message: '只能重設本地帳號密碼' });
+    }
+    
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+    
+    await user.update({ passwordHash });
+    res.json({ success: true, message: '密碼重設成功' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 停用/啟用使用者
+app.post('/api/users/:id/toggle-status', async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '使用者不存在' });
+    }
+    
+    await user.update({ isActive: !user.isActive });
+    
+    const { passwordHash, ...userResponse } = user.toJSON();
+    res.json({ success: true, data: userResponse });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 同步 AD 使用者
+app.post('/api/users/sync-ad', async (req, res) => {
+  try {
+    if (!AD_CONFIG.enabled) {
+      return res.status(400).json({ success: false, message: 'AD 功能未啟用' });
+    }
+    
+    // 這裡可以實現 AD 使用者同步邏輯
+    // 搜尋 AD 中的使用者並更新本地資料庫
+    
+    res.json({ success: true, message: 'AD 同步功能開發中' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 獲取簽核者清單
+app.get('/api/approvers', async (req, res) => {
+  try {
+    const approvers = await User.findAll({
+      where: { 
+        canApprove: true,
+        isActive: true
+      },
+      attributes: ['id', 'username', 'displayName', 'role', 'approvalLevel', 'department'],
+      order: [['approvalLevel', 'ASC']]
+    });
+    res.json({ success: true, data: approvers });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

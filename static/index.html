@@ -160,6 +160,7 @@
         .status-valid { background: #d4edda; color: #155724; }
         .status-expires-soon { background: #fff3cd; color: #856404; }
         .status-expired { background: #f8d7da; color: #721c24; }
+        .status-suspended { background: #e2e3e5; color: #383d41; }
         .status-success { background: #d4edda; color: #155724; }
         .status-failed { background: #f8d7da; color: #721c24; }
         .status-rejected { background: #f8d7da; color: #721c24; }
@@ -308,6 +309,7 @@
                 <button class="tab-btn active" data-tab="contractors">承攬商管理</button>
                 <button class="tab-btn" data-tab="workorders">施工單管理</button>
                 <button class="tab-btn" data-tab="approvals">待簽核清單</button>
+                <button class="tab-btn" data-tab="users">使用者管理</button>
                 <button class="tab-btn" data-tab="qualifications">年度資格管理</button>
                 <button class="tab-btn" data-tab="facematch">FaceMatch 整合</button>
             </div>
@@ -453,6 +455,116 @@
                         </thead>
                         <tbody id="approvalsTable">
                             <tr><td colspan="7">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 使用者管理 -->
+            <div id="users" class="tab-content hidden">
+                <div class="flex">
+                    <h2>使用者管理</h2>
+                    <div>
+                        <button class="btn btn-primary" onclick="showForm('user')">新增使用者</button>
+                        <button class="btn" onclick="syncADUsers()" style="background: #17a2b8; color: white;">同步 AD 使用者</button>
+                    </div>
+                </div>
+                
+                <div id="userForm" class="card hidden">
+                    <h3 id="userFormTitle">新增使用者</h3>
+                    <form id="userFormElement">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>使用者名稱 *</label>
+                                <input type="text" id="userUsername" required />
+                            </div>
+                            <div class="form-group">
+                                <label>顯示名稱 *</label>
+                                <input type="text" id="userDisplayName" required />
+                            </div>
+                            <div class="form-group">
+                                <label>電子郵件</label>
+                                <input type="email" id="userEmail" />
+                            </div>
+                            <div class="form-group">
+                                <label>電話號碼</label>
+                                <input type="text" id="userPhoneNumber" />
+                            </div>
+                            <div class="form-group">
+                                <label>員工編號</label>
+                                <input type="text" id="userEmployeeId" />
+                            </div>
+                            <div class="form-group">
+                                <label>職稱</label>
+                                <input type="text" id="userJobTitle" />
+                            </div>
+                            <div class="form-group">
+                                <label>部門</label>
+                                <input type="text" id="userDepartment" />
+                            </div>
+                            <div class="form-group">
+                                <label>角色 *</label>
+                                <select id="userRole" required>
+                                    <option value="一般使用者">一般使用者</option>
+                                    <option value="職環安">職環安</option>
+                                    <option value="再生經理">再生經理</option>
+                                    <option value="管理員">管理員</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>驗證方式</label>
+                                <select id="userAuthType">
+                                    <option value="LOCAL">本地帳號</option>
+                                    <option value="AD">AD 網域</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>簽核層級</label>
+                                <select id="userApprovalLevel">
+                                    <option value="">無簽核權限</option>
+                                    <option value="1">第一層 (職環安)</option>
+                                    <option value="2">第二層 (再生經理)</option>
+                                    <option value="999">所有層級 (管理員)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="passwordGroup">
+                                <label>密碼 (本地帳號)</label>
+                                <input type="password" id="userPassword" />
+                            </div>
+                            <div class="form-group">
+                                <label>是否啟用</label>
+                                <select id="userIsActive">
+                                    <option value="true">啟用</option>
+                                    <option value="false">停用</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>備註</label>
+                            <textarea id="userNotes" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn" onclick="hideForm('user')">取消</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>使用者名稱</th>
+                                <th>顯示名稱</th>
+                                <th>角色</th>
+                                <th>部門</th>
+                                <th>驗證方式</th>
+                                <th>簽核權限</th>
+                                <th>狀態</th>
+                                <th>最後登入</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr><td colspan="9">載入中...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -675,7 +787,114 @@
         // 初始化時載入 AD 配置
         window.addEventListener('load', () => {
             loadADConfig();
+            
+            // 為使用者表單添加事件監聽器
+            if (document.getElementById('userRole')) {
+                document.getElementById('userRole').addEventListener('change', updateApprovalLevelByRole);
+                document.getElementById('userAuthType').addEventListener('change', togglePasswordField);
+            }
         });
+        
+        // 載入使用者列表
+        async function loadUsers() {
+            try {
+                const data = await apiCall(`${API_BASE}/users`);
+                if (data.success) {
+                    renderUsers(data.data);
+                }
+            } catch (error) {
+                document.getElementById('usersTable').innerHTML = `<tr><td colspan="9" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+            }
+        }
+        
+        // 渲染使用者列表
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTable');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9">沒有使用者資料</td></tr>';
+            } else {
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.displayName || '-'}</td>
+                        <td><span class="status-badge status-${user.role === '管理員' ? 'success' : user.role === '職環安' ? 'warning' : user.role === '再生經理' ? 'info' : 'secondary'}">${user.role}</span></td>
+                        <td>${user.department || '-'}</td>
+                        <td><span class="status-badge status-${user.authType === 'AD' ? 'info' : 'secondary'}">${user.authType}</span></td>
+                        <td>${user.canApprove ? `第${user.approvalLevel}層` : '無權限'}</td>
+                        <td><span class="status-badge status-${user.isActive ? 'success' : 'danger'}">${user.isActive ? '啟用' : '停用'}</span></td>
+                        <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('zh-TW') : '從未登入'}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editItem('user', ${user.id})" style="margin-right: 5px; padding: 4px 8px; font-size: 12px;">編輯</button>
+                            <button class="btn ${user.isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleUserStatus(${user.id})" style="margin-right: 5px; padding: 4px 8px; font-size: 12px;">${user.isActive ? '停用' : '啟用'}</button>
+                            ${user.authType === 'LOCAL' ? `<button class="btn btn-info" onclick="resetPassword(${user.id})" style="margin-right: 5px; padding: 4px 8px; font-size: 12px;">重設密碼</button>` : ''}
+                            ${user.username !== 'admin' ? `<button class="btn btn-danger" onclick="deleteItem('user', ${user.id})" style="padding: 4px 8px; font-size: 12px;">刪除</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        // 切換使用者狀態
+        async function toggleUserStatus(userId) {
+            try {
+                const data = await apiCall(`${API_BASE}/users/${userId}/toggle-status`, {
+                    method: 'POST'
+                });
+                
+                if (data.success) {
+                    showMessage('使用者狀態更新成功');
+                    loadUsers();
+                } else {
+                    showMessage('狀態更新失敗', 'error');
+                }
+            } catch (error) {
+                showMessage('狀態更新錯誤: ' + error.message, 'error');
+            }
+        }
+        
+        // 重設密碼
+        async function resetPassword(userId) {
+            const newPassword = prompt('請輸入新密碼:');
+            if (!newPassword) return;
+            
+            if (newPassword.length < 6) {
+                alert('密碼長度至少需要 6 個字元');
+                return;
+            }
+            
+            try {
+                const data = await apiCall(`${API_BASE}/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    body: JSON.stringify({ newPassword })
+                });
+                
+                if (data.success) {
+                    showMessage('密碼重設成功');
+                } else {
+                    showMessage('密碼重設失敗', 'error');
+                }
+            } catch (error) {
+                showMessage('密碼重設錯誤: ' + error.message, 'error');
+            }
+        }
+        
+        // 同步 AD 使用者
+        async function syncADUsers() {
+            try {
+                const data = await apiCall(`${API_BASE}/users/sync-ad`, {
+                    method: 'POST'
+                });
+                
+                if (data.success) {
+                    showMessage('AD 同步完成');
+                    loadUsers();
+                } else {
+                    showMessage('AD 同步失敗: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('AD 同步錯誤: ' + error.message, 'error');
+            }
+        }
 
         // 工具函數
         function showElement(element) {
@@ -782,6 +1001,9 @@
                 case 'approvals':
                     await loadPendingApprovals();
                     break;
+                case 'users':
+                    await loadUsers();
+                    break;
                 case 'qualifications':
                     await loadQualifications();
                     break;
@@ -870,17 +1092,93 @@
                             <td>${item.personName}</td>
                             <td>${getStatusText(item.type, 'qualification')}</td>
                             <td>${item.name}</td>
-                            <td>${item.validTo}</td>
+                            <td>${item.validTo ? new Date(item.validTo).toLocaleDateString('zh-TW') : '-'}</td>
                             <td><span class="status-badge status-${item.status.toLowerCase().replace('_', '-')}">${getStatusText(item.status, 'qualification')}</span></td>
                             <td>
-                                <button class="btn btn-primary" onclick="editItem('qualification', ${item.id})">編輯</button>
-                                <button class="btn btn-danger" onclick="deleteItem('qualification', ${item.id})">刪除</button>
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" onclick="editItem('qualification', ${item.id})">編輯</button>
+                                    ${item.status !== 'SUSPENDED' ? 
+                                        `<button class="btn btn-success" onclick="quickRenewQualification(${item.id}, '${item.personName}', '${item.name}')" title="快速續約">續約</button>
+                                         <button class="btn btn-warning" onclick="quickSuspendQualification(${item.id}, '${item.personName}', '${item.name}')" title="快速停用">停用</button>` :
+                                        `<button class="btn btn-info" onclick="reactivateQualification(${item.id}, '${item.personName}', '${item.name}')" title="重新啟用">啟用</button>`
+                                    }
+                                    <button class="btn btn-danger" onclick="deleteItem('qualification', ${item.id})">刪除</button>
+                                </div>
                             </td>
                         </tr>
                     `).join('');
                 }
             } catch (error) {
                 document.getElementById('qualificationsTable').innerHTML = `<tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+            }
+        }
+
+        // 快速續約年度資格
+        async function quickRenewQualification(id, personName, qualificationName) {
+            const renewalPeriod = prompt(`確定要為「${personName}」的「${qualificationName}」資格續約嗎？\n\n請輸入續約年數 (預設: 1年):`, '1');
+            if (renewalPeriod === null) return;
+            
+            const renewalNotes = prompt('請輸入續約備註 (可選):', '年度續約');
+            
+            try {
+                const result = await apiCall(`${API_BASE}/qualifications/${id}/quick-renew`, 'POST', {
+                    renewalPeriod: parseInt(renewalPeriod) || 1,
+                    renewalNotes: renewalNotes || '快速續約',
+                    renewedBy: '系統管理員'
+                });
+                
+                if (result.success) {
+                    showMessage(result.message || '資格續約成功！', 'success');
+                    await loadQualifications();
+                } else {
+                    showMessage('續約失敗：' + result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('續約失敗：' + error.message, 'error');
+            }
+        }
+
+        // 快速停用年度資格
+        async function quickSuspendQualification(id, personName, qualificationName) {
+            const suspendReason = prompt(`確定要停用「${personName}」的「${qualificationName}」資格嗎？\n\n請輸入停用原因:`, '管理需要');
+            if (suspendReason === null) return;
+            
+            try {
+                const result = await apiCall(`${API_BASE}/qualifications/${id}/quick-suspend`, 'POST', {
+                    suspendReason: suspendReason,
+                    suspendedBy: '系統管理員'
+                });
+                
+                if (result.success) {
+                    showMessage(result.message || '資格已停用！', 'warning');
+                    await loadQualifications();
+                } else {
+                    showMessage('停用失敗：' + result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('停用失敗：' + error.message, 'error');
+            }
+        }
+
+        // 重新啟用年度資格
+        async function reactivateQualification(id, personName, qualificationName) {
+            const notes = prompt(`確定要重新啟用「${personName}」的「${qualificationName}」資格嗎？\n\n請輸入啟用備註 (可選):`, '重新啟用');
+            if (notes === null) return;
+            
+            try {
+                const result = await apiCall(`${API_BASE}/qualifications/${id}/reactivate`, 'POST', {
+                    reactivatedBy: '系統管理員',
+                    notes: notes || '重新啟用'
+                });
+                
+                if (result.success) {
+                    showMessage(result.message || '資格已重新啟用！', 'success');
+                    await loadQualifications();
+                } else {
+                    showMessage('啟用失敗：' + result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('啟用失敗：' + error.message, 'error');
             }
         }
 
@@ -924,7 +1222,8 @@
                     'MANAGEMENT': '管理資格',
                     'VALID': '有效',
                     'EXPIRES_SOON': '即將到期',
-                    'EXPIRED': '已過期'
+                    'EXPIRED': '已過期',
+                    'SUSPENDED': '已停用'
                 },
                 facematch: {
                     'PENDING': '待同步',
@@ -965,7 +1264,8 @@
                 'contractor': '承攬商',
                 'workorder': '施工單',
                 'qualification': '資格',
-                'facematch': '記錄'
+                'facematch': '記錄',
+                'user': '使用者'
             };
             return titles[type] || type;
         }
@@ -994,11 +1294,61 @@
                 document.getElementById('facematchPersonName').value = item.personName || '';
                 document.getElementById('facematchWorkOrderId').value = item.workOrderId || '';
                 document.getElementById('facematchStatus').value = item.status || 'PENDING';
+            } else if (type === 'user') {
+                document.getElementById('userUsername').value = item.username || '';
+                document.getElementById('userDisplayName').value = item.displayName || '';
+                document.getElementById('userEmail').value = item.email || '';
+                document.getElementById('userPhoneNumber').value = item.phoneNumber || '';
+                document.getElementById('userEmployeeId').value = item.employeeId || '';
+                document.getElementById('userJobTitle').value = item.jobTitle || '';
+                document.getElementById('userDepartment').value = item.department || '';
+                document.getElementById('userRole').value = item.role || '一般使用者';
+                document.getElementById('userAuthType').value = item.authType || 'LOCAL';
+                document.getElementById('userApprovalLevel').value = item.approvalLevel || '';
+                document.getElementById('userIsActive').value = item.isActive ? 'true' : 'false';
+                document.getElementById('userNotes').value = item.notes || '';
+                
+                // 根據角色自動設定簽核層級
+                updateApprovalLevelByRole();
+                // 根據驗證方式顯示/隱藏密碼欄位
+                togglePasswordField();
+            }
+        }
+        
+        // 根據角色自動設定簽核層級
+        function updateApprovalLevelByRole() {
+            const role = document.getElementById('userRole').value;
+            const approvalLevelSelect = document.getElementById('userApprovalLevel');
+            
+            switch(role) {
+                case '管理員':
+                    approvalLevelSelect.value = '999';
+                    break;
+                case '職環安':
+                    approvalLevelSelect.value = '1';
+                    break;
+                case '再生經理':
+                    approvalLevelSelect.value = '2';
+                    break;
+                default:
+                    approvalLevelSelect.value = '';
+            }
+        }
+        
+        // 根據驗證方式顯示/隱藏密碼欄位
+        function togglePasswordField() {
+            const authType = document.getElementById('userAuthType').value;
+            const passwordGroup = document.getElementById('passwordGroup');
+            
+            if (authType === 'LOCAL') {
+                passwordGroup.style.display = 'block';
+            } else {
+                passwordGroup.style.display = 'none';
             }
         }
 
         // 表單提交事件
-        ['contractor', 'workorder', 'qualification', 'facematch'].forEach(type => {
+        ['contractor', 'workorder', 'qualification', 'facematch', 'user'].forEach(type => {
             document.getElementById(`${type}FormElement`).addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await saveItem(type);
@@ -1056,7 +1406,26 @@
                     personName: document.getElementById('facematchPersonName').value,
                     workOrderId: parseInt(document.getElementById('facematchWorkOrderId').value),
                     status: document.getElementById('facematchStatus').value
-                })
+                }),
+                user: () => {
+                    const approvalLevel = document.getElementById('userApprovalLevel').value;
+                    return {
+                        username: document.getElementById('userUsername').value,
+                        displayName: document.getElementById('userDisplayName').value,
+                        email: document.getElementById('userEmail').value,
+                        phoneNumber: document.getElementById('userPhoneNumber').value,
+                        employeeId: document.getElementById('userEmployeeId').value,
+                        jobTitle: document.getElementById('userJobTitle').value,
+                        department: document.getElementById('userDepartment').value,
+                        role: document.getElementById('userRole').value,
+                        authType: document.getElementById('userAuthType').value,
+                        approvalLevel: approvalLevel ? parseInt(approvalLevel) : null,
+                        canApprove: !!approvalLevel,
+                        isActive: document.getElementById('userIsActive').value === 'true',
+                        notes: document.getElementById('userNotes').value,
+                        password: document.getElementById('userPassword').value // 只有新增時才會有值
+                    };
+                }
             };
             return forms[type]();
         }
@@ -1066,6 +1435,7 @@
                 'contractor': 'contractors',
                 'workorder': 'work-orders',
                 'qualification': 'qualifications',
+                'user': 'users',
                 'facematch': 'facematch'
             };
             return endpoints[type];
@@ -1132,7 +1502,7 @@
             const tabButtons = document.querySelectorAll('.tab-btn');
             tabButtons.forEach(btn => {
                 const tab = btn.dataset.tab;
-                if (!isManager && (tab === 'contractors' || tab === 'qualifications' || tab === 'facematch')) {
+                if (!isManager && (tab === 'contractors' || tab === 'users' || tab === 'qualifications' || tab === 'facematch')) {
                     btn.style.display = 'none';
                 } else {
                     btn.style.display = 'block';
@@ -1142,7 +1512,7 @@
             // 如果當前是非管理員角色且在被隱藏的頁面，自動切換到待簽核清單
             if (!isManager) {
                 const currentTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-                if (currentTab === 'contractors' || currentTab === 'qualifications' || currentTab === 'facematch') {
+                if (currentTab === 'contractors' || currentTab === 'users' || currentTab === 'qualifications' || currentTab === 'facematch') {
                     // 切換到待簽核清單
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     document.querySelector('[data-tab="approvals"]').classList.add('active');
