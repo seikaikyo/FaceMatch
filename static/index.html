@@ -162,6 +162,43 @@
         .status-expired { background: #f8d7da; color: #721c24; }
         .status-success { background: #d4edda; color: #155724; }
         .status-failed { background: #f8d7da; color: #721c24; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-returned { background: #fff3cd; color: #856404; }
+
+        .approval-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .approval-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .history-item {
+            border-left: 3px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .history-approved { border-left-color: #28a745; }
+        .history-rejected { border-left-color: #dc3545; }
+        .history-returned { border-left-color: #ffc107; }
+
+        .approval-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
 
         .login-form {
             max-width: 400px;
@@ -239,6 +276,7 @@
             <div class="nav">
                 <button class="tab-btn active" data-tab="contractors">承攬商管理</button>
                 <button class="tab-btn" data-tab="workorders">施工單管理</button>
+                <button class="tab-btn" data-tab="approvals">待簽核清單</button>
                 <button class="tab-btn" data-tab="qualifications">年度資格管理</button>
                 <button class="tab-btn" data-tab="facematch">FaceMatch 整合</button>
             </div>
@@ -350,13 +388,78 @@
                                 <th>承攬商</th>
                                 <th>施工地點</th>
                                 <th>狀態</th>
+                                <th>當前簽核者</th>
+                                <th>簽核進度</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="workordersTable">
-                            <tr><td colspan="6">載入中...</td></tr>
+                            <tr><td colspan="8">載入中...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 待簽核清單 -->
+            <div id="approvals" class="tab-content hidden">
+                <div class="flex">
+                    <h2>待簽核清單</h2>
+                    <button class="btn btn-primary" onclick="loadPendingApprovals()">重新整理</button>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>施工單號</th>
+                                <th>工程標題</th>
+                                <th>承攬商</th>
+                                <th>提交人</th>
+                                <th>提交時間</th>
+                                <th>當前簽核者</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvalsTable">
+                            <tr><td colspan="7">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 簽核詳情模態框 -->
+            <div id="approvalModal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 800px; z-index: 1000; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+                    <h3>施工單簽核</h3>
+                    <button onclick="closeApprovalModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                </div>
+                
+                <div id="approvalDetails">
+                    <!-- 施工單詳情 -->
+                    <div class="approval-info">
+                        <h4>施工單資訊</h4>
+                        <div id="workOrderDetails"></div>
+                    </div>
+                    
+                    <!-- 簽核歷史 -->
+                    <div class="approval-section">
+                        <h4>簽核歷史</h4>
+                        <div id="approvalHistory"></div>
+                    </div>
+                    
+                    <!-- 簽核操作 -->
+                    <div class="approval-section">
+                        <h4>簽核意見</h4>
+                        <div class="form-group">
+                            <label>意見</label>
+                            <textarea id="approvalComment" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="請輸入簽核意見"></textarea>
+                        </div>
+                        <div class="approval-actions">
+                            <button class="btn btn-success" onclick="performApproval('APPROVED')">核准</button>
+                            <button class="btn btn-danger" onclick="performApproval('REJECTED')">駁回</button>
+                            <button class="btn" style="background: #ffc107; color: #212529;" onclick="performApproval('RETURNED')">退回修正</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -583,6 +686,9 @@
                     await loadWorkOrders();
                     await loadContractorsForSelect();
                     break;
+                case 'approvals':
+                    await loadPendingApprovals();
+                    break;
                 case 'qualifications':
                     await loadQualifications();
                     break;
@@ -630,15 +736,18 @@
                             <td>${item.contractorName || '未知'}</td>
                             <td>${item.location}</td>
                             <td><span class="status-badge status-${item.status.toLowerCase()}">${getStatusText(item.status, 'workorder')}</span></td>
+                            <td>${item.currentApprover || '-'}</td>
+                            <td>${item.approvalLevel || 0}/${item.totalLevels || 2}</td>
                             <td>
                                 <button class="btn btn-primary" onclick="editItem('workorder', ${item.id})">編輯</button>
                                 <button class="btn btn-danger" onclick="deleteItem('workorder', ${item.id})">刪除</button>
+                                ${item.status === 'PENDING' ? `<button class="btn" style="background: #17a2b8; color: white;" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
                             </td>
                         </tr>
                     `).join('');
                 }
             } catch (error) {
-                document.getElementById('workordersTable').innerHTML = `<tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+                document.getElementById('workordersTable').innerHTML = `<tr><td colspan="8" style="color: red;">載入失敗: ${error.message}</td></tr>`;
             }
         }
 
@@ -712,7 +821,9 @@
                 workorder: {
                     'PENDING': '待審核',
                     'APPROVED': '已核准',
-                    'COMPLETED': '已完成'
+                    'COMPLETED': '已完成',
+                    'REJECTED': '已駁回',
+                    'RETURNED': '已退回'
                 },
                 qualification: {
                     'SAFETY': '安全資格',
@@ -882,6 +993,139 @@
             } catch (error) {
                 showMessage(`刪除失敗: ${error.message}`, 'error');
             }
+        }
+
+        // 簽核功能相關變數
+        let currentApprovalId = null;
+
+        // 載入待簽核清單
+        async function loadPendingApprovals() {
+            try {
+                const data = await apiCall(`${API_BASE}/work-orders/pending-approval`);
+                if (data.success) {
+                    renderPendingApprovals(data.data);
+                }
+            } catch (error) {
+                document.getElementById('approvalsTable').innerHTML = '<tr><td colspan="7">載入失敗</td></tr>';
+            }
+        }
+
+        // 渲染待簽核清單
+        function renderPendingApprovals(approvals) {
+            const table = document.getElementById('approvalsTable');
+            if (approvals.length === 0) {
+                table.innerHTML = '<tr><td colspan="7">沒有待簽核的施工單</td></tr>';
+                return;
+            }
+
+            table.innerHTML = approvals.map(order => `
+                <tr>
+                    <td>${order.orderNumber}</td>
+                    <td>${order.title}</td>
+                    <td>${order.contractorName}</td>
+                    <td>${order.location}</td>
+                    <td>${order.currentApprover}</td>
+                    <td>${order.approvalLevel}/${order.totalLevels}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="viewApprovalDetails(${order.id})">查看詳情</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 查看簽核詳情
+        async function viewApprovalDetails(id) {
+            try {
+                currentApprovalId = id;
+                
+                // 載入施工單詳情
+                const orderData = await apiCall(`${API_BASE}/work-orders`);
+                const order = orderData.data.find(o => o.id === id);
+                
+                // 載入簽核歷史
+                const historyData = await apiCall(`${API_BASE}/work-orders/${id}/history`);
+                
+                if (order) {
+                    // 顯示施工單詳情
+                    document.getElementById('approvalOrderNumber').textContent = order.orderNumber;
+                    document.getElementById('approvalOrderTitle').textContent = order.title;
+                    document.getElementById('approvalContractor').textContent = order.contractorName;
+                    document.getElementById('approvalLocation').textContent = order.location;
+                    document.getElementById('approvalCurrentLevel').textContent = `${order.approvalLevel}/${order.totalLevels}`;
+                    document.getElementById('approvalCurrentApprover').textContent = order.currentApprover || '無';
+                    
+                    // 顯示簽核歷史
+                    const historyHtml = historyData.success && historyData.data.length > 0 
+                        ? historyData.data.map(h => `
+                            <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
+                                <div><strong>第${h.level}層</strong> - ${h.approver}</div>
+                                <div>決定: <span style="color: ${h.action === 'APPROVED' ? 'green' : h.action === 'REJECTED' ? 'red' : 'orange'}">${getActionText(h.action)}</span></div>
+                                <div>意見: ${h.comment}</div>
+                                <div>時間: ${new Date(h.timestamp).toLocaleString()}</div>
+                            </div>
+                        `).join('')
+                        : '<div>尚無簽核歷史</div>';
+                    
+                    document.getElementById('approvalHistory').innerHTML = historyHtml;
+                    
+                    // 顯示簽核模態框
+                    showElement(document.getElementById('approvalModal'));
+                }
+            } catch (error) {
+                showMessage('載入簽核詳情失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 執行簽核動作
+        async function performApproval(action) {
+            if (!currentApprovalId) {
+                showMessage('沒有選擇要簽核的施工單', 'error');
+                return;
+            }
+
+            const comment = document.getElementById('approvalComment').value.trim();
+            const approver = currentUser ? currentUser.name : '管理員';
+
+            try {
+                const data = await apiCall(`${API_BASE}/work-orders/${currentApprovalId}/approve`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action,
+                        comment,
+                        approver
+                    })
+                });
+
+                if (data.success) {
+                    showMessage(`簽核${getActionText(action)}成功`);
+                    closeApprovalModal();
+                    loadPendingApprovals(); // 重新載入待簽核清單
+                    if (currentTab === 'workorders') {
+                        loadWorkOrders(); // 如果在施工單頁面也重新載入
+                    }
+                } else {
+                    showMessage('簽核失敗', 'error');
+                }
+            } catch (error) {
+                showMessage('簽核錯誤: ' + error.message, 'error');
+            }
+        }
+
+        // 關閉簽核模態框
+        function closeApprovalModal() {
+            hideElement(document.getElementById('approvalModal'));
+            currentApprovalId = null;
+            document.getElementById('approvalComment').value = '';
+        }
+
+        // 獲取動作文字
+        function getActionText(action) {
+            const texts = {
+                'APPROVED': '核准',
+                'REJECTED': '駁回',
+                'RETURNED': '退回修正'
+            };
+            return texts[action] || action;
         }
 
         // 初始化

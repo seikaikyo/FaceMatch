@@ -22,8 +22,56 @@ let contractors = [
 ];
 
 let workOrders = [
-  { id: 1, orderNumber: 'WO001', title: '設備維護', contractorId: 1, location: '廠區A', status: 'PENDING' },
-  { id: 2, orderNumber: 'WO002', title: '清潔作業', contractorId: 2, location: '廠區B', status: 'APPROVED' }
+  { 
+    id: 1, 
+    orderNumber: 'WO001', 
+    title: '設備維護', 
+    contractorId: 1, 
+    location: '廠區A', 
+    status: 'PENDING',
+    createdAt: '2025-07-20T08:00:00Z',
+    submittedBy: '張承攬商',
+    currentApprover: '李主管',
+    approvalLevel: 1,
+    totalLevels: 2
+  },
+  { 
+    id: 2, 
+    orderNumber: 'WO002', 
+    title: '清潔作業', 
+    contractorId: 2, 
+    location: '廠區B', 
+    status: 'APPROVED',
+    createdAt: '2025-07-18T10:30:00Z',
+    submittedBy: '王承攬商',
+    currentApprover: null,
+    approvalLevel: 2,
+    totalLevels: 2,
+    approvedAt: '2025-07-19T14:20:00Z',
+    approvedBy: '陳經理'
+  }
+];
+
+// 簽核歷史記錄
+let approvalHistory = [
+  {
+    id: 1,
+    workOrderId: 2,
+    level: 1,
+    approver: '李主管',
+    action: 'APPROVED',
+    comment: '初步審核通過',
+    timestamp: '2025-07-18T16:00:00Z'
+  },
+  {
+    id: 2,
+    workOrderId: 2,
+    level: 2,
+    approver: '陳經理',
+    action: 'APPROVED',
+    comment: '最終核准',
+    timestamp: '2025-07-19T14:20:00Z'
+  }
 ];
 
 let qualifications = [
@@ -85,7 +133,16 @@ app.get('/api/work-orders', (req, res) => {
 });
 
 app.post('/api/work-orders', (req, res) => {
-  const newOrder = { id: Date.now(), ...req.body };
+  const newOrder = { 
+    id: Date.now(), 
+    ...req.body,
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+    submittedBy: req.body.submittedBy || '系統管理員',
+    currentApprover: '李主管',
+    approvalLevel: 1,
+    totalLevels: 2
+  };
   workOrders.push(newOrder);
   res.json({ success: true, data: newOrder });
 });
@@ -106,6 +163,84 @@ app.delete('/api/work-orders/:id', (req, res) => {
   workOrders = workOrders.filter(w => w.id !== id);
   res.json({ success: true });
 });
+
+// 施工單簽核 API
+app.post('/api/work-orders/:id/approve', (req, res) => {
+  const id = parseInt(req.params.id);
+  const { action, comment, approver } = req.body; // action: 'APPROVED' | 'REJECTED' | 'RETURNED'
+  
+  const workOrder = workOrders.find(w => w.id === id);
+  if (!workOrder) {
+    return res.status(404).json({ success: false, message: '施工單不存在' });
+  }
+
+  // 記錄簽核歷史
+  const historyRecord = {
+    id: Date.now(),
+    workOrderId: id,
+    level: workOrder.approvalLevel,
+    approver: approver || '管理員',
+    action,
+    comment: comment || '',
+    timestamp: new Date().toISOString()
+  };
+  approvalHistory.push(historyRecord);
+
+  // 更新施工單狀態
+  if (action === 'APPROVED') {
+    if (workOrder.approvalLevel >= workOrder.totalLevels) {
+      // 最終核准
+      workOrder.status = 'APPROVED';
+      workOrder.approvedAt = new Date().toISOString();
+      workOrder.approvedBy = approver || '管理員';
+      workOrder.currentApprover = null;
+    } else {
+      // 進入下一層審核
+      workOrder.approvalLevel++;
+      workOrder.currentApprover = getNextApprover(workOrder.approvalLevel);
+    }
+  } else if (action === 'REJECTED') {
+    workOrder.status = 'REJECTED';
+    workOrder.rejectedAt = new Date().toISOString();
+    workOrder.rejectedBy = approver || '管理員';
+    workOrder.currentApprover = null;
+  } else if (action === 'RETURNED') {
+    workOrder.status = 'RETURNED';
+    workOrder.returnedAt = new Date().toISOString();
+    workOrder.returnedBy = approver || '管理員';
+    workOrder.currentApprover = null;
+  }
+
+  res.json({ success: true, data: workOrder, history: historyRecord });
+});
+
+// 獲取簽核歷史
+app.get('/api/work-orders/:id/history', (req, res) => {
+  const id = parseInt(req.params.id);
+  const history = approvalHistory.filter(h => h.workOrderId === id);
+  res.json({ success: true, data: history });
+});
+
+// 獲取待簽核清單
+app.get('/api/work-orders/pending-approval', (req, res) => {
+  const pendingOrders = workOrders.filter(order => 
+    order.status === 'PENDING' && order.currentApprover
+  ).map(order => ({
+    ...order,
+    contractorName: contractors.find(c => c.id === order.contractorId)?.name || '未知'
+  }));
+  res.json({ success: true, data: pendingOrders });
+});
+
+// 輔助函數：獲取下一層簽核者
+function getNextApprover(level) {
+  const approvers = {
+    1: '李主管',
+    2: '陳經理',
+    3: '總經理'
+  };
+  return approvers[level] || null;
+}
 
 // 年度資格 CRUD
 app.get('/api/qualifications', (req, res) => {
