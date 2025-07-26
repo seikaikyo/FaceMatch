@@ -14,8 +14,8 @@ echo - 🎨 內建 CSS 樣式，無複雜依賴
 echo - ⚡ 快速啟動，無編譯錯誤
 echo.
 
-echo Step 1: 啟動 SQLite 後端服務 (Port 5001)...
-start "SQLite 後端 API" cmd /k "cd /d %~dp0 && node sqlite-backend.js"
+echo Step 1: 啟動增強版後端服務 (Port 5001)...
+start "增強版後端 API" cmd /k "cd /d %~dp0 && node enhanced-backend.js"
 
 echo 等待後端初始化...
 timeout /t 3 /nobreak >nul
@@ -38,7 +38,9 @@ echo.
 echo 📋 可用功能:
 echo - 👥 承攬商管理 (完整 CRUD)
 echo - 📋 施工單管理 (完整 CRUD + 簽核工作流程)
-echo - ✅ 簽核管理 (職環安 → 再生經理)
+echo - ✅ 簽核管理 (職環安 → 再生經理 + 快速簽核)
+echo - 🔐 AD 網域驗證 (支援 Active Directory)
+echo - 👤 多角色切換 (管理員/職環安/再生經理)
 echo - 🎓 年度資格管理 (完整 CRUD)
 echo - 👤 FaceMatch 整合 (完整 CRUD)
 echo.

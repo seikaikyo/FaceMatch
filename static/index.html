@@ -251,17 +251,38 @@
         <div id="loginSection" class="login-form">
             <h2>FaceMatch 管理系統</h2>
             <div id="loginMessage"></div>
+            
+            <!-- 驗證方式選擇 -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="authType" value="local" checked onchange="toggleAuthType()">
+                    <span>本地帳號登入</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="radio" name="authType" value="ad" onchange="toggleAuthType()">
+                    <span>AD 網域登入</span>
+                </label>
+            </div>
+            
             <form id="loginForm">
                 <div class="form-group">
                     <label>使用者名稱</label>
                     <input type="text" id="username" value="admin" required />
+                    <small id="usernameHint" style="color: #666; font-size: 12px;">測試帳號: admin, safety, manager</small>
                 </div>
                 <div class="form-group">
                     <label>密碼</label>
                     <input type="password" id="password" value="admin123" required />
+                    <small id="passwordHint" style="color: #666; font-size: 12px;">對應密碼: admin123, safety123, manager123</small>
                 </div>
                 <button type="submit" class="btn btn-primary">登入</button>
             </form>
+            
+            <!-- AD 設定顯示 -->
+            <div id="adInfo" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #666; display: none;">
+                <div>AD 網域: <span id="adDomain">未設定</span></div>
+                <div>狀態: <span id="adStatus">檢查中...</span></div>
+            </div>
         </div>
 
         <!-- 主系統 -->
@@ -424,9 +445,9 @@
                                 <th>施工單號</th>
                                 <th>工程標題</th>
                                 <th>承攬商</th>
-                                <th>提交人</th>
-                                <th>提交時間</th>
+                                <th>施工地點</th>
                                 <th>當前簽核者</th>
+                                <th>簽核進度</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -601,6 +622,60 @@
         let editingType = null;
         
         console.log('FaceMatch 系統啟動中...');
+        
+        // AD 配置和驗證方式切換
+        let adConfig = { enabled: false, domain: '' };
+        
+        // 載入 AD 配置
+        async function loadADConfig() {
+            try {
+                const data = await apiCall(`${API_BASE}/ad-config`);
+                adConfig = data;
+                
+                if (adConfig.enabled) {
+                    document.getElementById('adDomain').textContent = adConfig.domain;
+                    document.getElementById('adStatus').textContent = '可用';
+                    document.getElementById('adStatus').style.color = 'green';
+                } else {
+                    document.getElementById('adStatus').textContent = '未啟用';
+                    document.getElementById('adStatus').style.color = 'orange';
+                }
+            } catch (error) {
+                document.getElementById('adStatus').textContent = '無法連接';
+                document.getElementById('adStatus').style.color = 'red';
+            }
+        }
+        
+        // 切換驗證方式
+        function toggleAuthType() {
+            const authType = document.querySelector('input[name="authType"]:checked').value;
+            const adInfo = document.getElementById('adInfo');
+            const usernameHint = document.getElementById('usernameHint');
+            const passwordHint = document.getElementById('passwordHint');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            
+            if (authType === 'ad') {
+                adInfo.style.display = 'block';
+                usernameHint.textContent = '請輸入您的 AD 帳號';
+                passwordHint.textContent = '請輸入您的 AD 密碼';
+                usernameInput.value = '';
+                passwordInput.value = '';
+                usernameInput.placeholder = 'username@domain.com';
+            } else {
+                adInfo.style.display = 'none';
+                usernameHint.textContent = '測試帳號: admin, safety, manager';
+                passwordHint.textContent = '對應密碼: admin123, safety123, manager123';
+                usernameInput.value = 'admin';
+                passwordInput.value = 'admin123';
+                usernameInput.placeholder = '';
+            }
+        }
+        
+        // 初始化時載入 AD 配置
+        window.addEventListener('load', () => {
+            loadADConfig();
+        });
 
         // 工具函數
         function showElement(element) {
@@ -649,11 +724,12 @@
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const useAD = document.querySelector('input[name="authType"]:checked').value === 'ad';
 
             try {
                 const data = await apiCall(`${API_BASE}/login`, {
                     method: 'POST',
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password, useAD })
                 });
 
                 if (data.success) {
@@ -1110,9 +1186,17 @@
 
             table.innerHTML = filteredApprovals.map(order => {
                 const canApprove = currentUserRole === '管理員' || order.currentApprover === currentUserRole;
-                const actionButton = canApprove 
-                    ? `<button class="btn btn-primary" onclick="viewApprovalDetails(${order.id})">查看詳情</button>`
-                    : `<span style="color: #999;">非您的簽核項目</span>`;
+                
+                let actionButtons = '';
+                if (canApprove) {
+                    actionButtons = `
+                        <button class="btn btn-primary" onclick="viewApprovalDetails(${order.id})" style="margin-right: 5px;">詳細簽核</button>
+                        <button class="btn btn-success" onclick="quickApprove(${order.id}, 'APPROVE')" style="margin-right: 3px; padding: 4px 8px; font-size: 12px;">快速核准</button>
+                        <button class="btn btn-danger" onclick="quickApprove(${order.id}, 'REJECT')" style="padding: 4px 8px; font-size: 12px;">快速駁回</button>
+                    `;
+                } else {
+                    actionButtons = `<span style="color: #999;">非您的簽核項目</span>`;
+                }
                 
                 return `
                     <tr>
@@ -1122,7 +1206,7 @@
                         <td>${order.location}</td>
                         <td>${order.currentApprover}</td>
                         <td>${order.approvalLevel}/${order.totalLevels}</td>
-                        <td>${actionButton}</td>
+                        <td>${actionButtons}</td>
                     </tr>
                 `;
             }).join('');
@@ -1223,6 +1307,37 @@
             hideElement(document.getElementById('approvalModal'));
             currentApprovalId = null;
             document.getElementById('approvalComment').value = '';
+        }
+
+        // 快速簽核功能
+        async function quickApprove(workOrderId, action) {
+            const actionText = action === 'APPROVE' ? '核准' : '駁回';
+            
+            if (!confirm(`確定要快速${actionText}這個施工單嗎？`)) {
+                return;
+            }
+
+            try {
+                const data = await apiCall(`${API_BASE}/work-orders/${workOrderId}/quick-approve`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action,
+                        approver: currentUserRole || '管理員'
+                    })
+                });
+
+                if (data.success) {
+                    showMessage(`快速${actionText}成功`);
+                    loadPendingApprovals(); // 重新載入待簽核清單
+                    if (currentTab === 'workorders') {
+                        loadWorkOrders(); // 如果在施工單頁面也重新載入
+                    }
+                } else {
+                    showMessage(`快速${actionText}失敗`, 'error');
+                }
+            } catch (error) {
+                showMessage(`快速${actionText}錯誤: ` + error.message, 'error');
+            }
         }
 
         // 獲取動作文字
