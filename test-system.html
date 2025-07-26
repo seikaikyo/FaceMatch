@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <title>系統完整測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>FaceMatch 系統測試</h1>
+    
+    <button onclick="testAll()">執行完整測試</button>
+    <button onclick="testLogin()">測試登入</button>
+    <button onclick="testContractors()">測試承攬商 API</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        async function testAll() {
+            document.getElementById('results').innerHTML = '';
+            log('開始完整系統測試...');
+            
+            await testBackendConnection();
+            await testLogin();
+            await testContractors();
+            await testWorkOrders();
+            await testQualifications();
+            await testFaceMatch();
+            
+            log('✅ 完整測試完成！', 'success');
+        }
+        
+        async function testBackendConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/contractors`);
+                if (response.ok) {
+                    log('✅ 後端連接正常', 'success');
+                } else {
+                    log(`❌ 後端連接失敗: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 後端連接錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ 登入測試成功: ${data.user.name}`, 'success');
+                } else {
+                    log(`❌ 登入失敗: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 登入錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testContractors() {
+            try {
+                // 測試獲取列表
+                const response = await fetch(`${API_BASE}/contractors`);
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    log(`✅ 承攬商列表獲取成功: ${data.data.length} 筆記錄`, 'success');
+                    
+                    // 測試新增
+                    const newContractor = {
+                        name: '測試公司',
+                        code: 'TEST001',
+                        contact: '測試聯絡人',
+                        phone: '02-1111-2222',
+                        status: 'ACTIVE'
+                    };
+                    
+                    const addResponse = await fetch(`${API_BASE}/contractors`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newContractor)
+                    });
+                    
+                    const addData = await addResponse.json();
+                    if (addData.success) {
+                        log('✅ 承攬商新增測試成功', 'success');
+                        
+                        // 測試刪除
+                        const deleteResponse = await fetch(`${API_BASE}/contractors/${addData.data.id}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const deleteData = await deleteResponse.json();
+                        if (deleteData.success) {
+                            log('✅ 承攬商刪除測試成功', 'success');
+                        }
+                    }
+                } else {
+                    log(`❌ 承攬商 API 測試失敗`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 承攬商測試錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testWorkOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/work-orders`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ 施工單 API 測試成功: ${data.data.length} 筆記錄`, 'success');
+                } else {
+                    log(`❌ 施工單 API 測試失敗`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 施工單測試錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testQualifications() {
+            try {
+                const response = await fetch(`${API_BASE}/qualifications`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ 年度資格 API 測試成功: ${data.data.length} 筆記錄`, 'success');
+                } else {
+                    log(`❌ 年度資格 API 測試失敗`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 年度資格測試錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFaceMatch() {
+            try {
+                const response = await fetch(`${API_BASE}/facematch`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ FaceMatch API 測試成功: ${data.data.length} 筆記錄`, 'success');
+                } else {
+                    log(`❌ FaceMatch API 測試失敗`, 'error');
+                }
+            } catch (error) {
+                log(`❌ FaceMatch 測試錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        // 自動執行基本測試
+        window.onload = function() {
+            log('頁面加載完成，可以開始測試');
+            log('後端地址: ' + API_BASE);
+            log('前端地址: ' + window.location.href);
+        };
+    </script>
+</body>
+</html>

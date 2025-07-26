@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FaceMatch 極簡管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin: -20px -20px 20px -20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .nav button {
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav button.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .nav button:hover {
+            background: #ddd;
+        }
+
+        .nav button.active:hover {
+            background: #45a049;
+        }
+
+        .flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d1ecf1; color: #0c5460; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-valid { background: #d4edda; color: #155724; }
+        .status-expires-soon { background: #fff3cd; color: #856404; }
+        .status-expired { background: #f8d7da; color: #721c24; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+
+        .login-form {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; }
+            .flex { flex-direction: column; align-items: stretch; gap: 10px; }
+            table { font-size: 12px; }
+            .btn { padding: 8px 12px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 登入表單 -->
+        <div id="loginSection" class="login-form">
+            <h2>FaceMatch 管理系統</h2>
+            <div id="loginMessage"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>使用者名稱</label>
+                    <input type="text" id="username" value="admin" required />
+                </div>
+                <div class="form-group">
+                    <label>密碼</label>
+                    <input type="password" id="password" value="admin123" required />
+                </div>
+                <button type="submit" class="btn btn-primary">登入</button>
+            </form>
+        </div>
+
+        <!-- 主系統 -->
+        <div id="mainSystem" class="container hidden">
+            <div class="header">
+                <h1>FaceMatch 極簡管理系統</h1>
+                <p>歡迎，<span id="userName">管理員</span> | 
+                   <button id="logoutBtn" style="background: none; border: 1px solid white; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">登出</button>
+                </p>
+            </div>
+            
+            <div class="nav">
+                <button class="tab-btn active" data-tab="contractors">承攬商管理</button>
+                <button class="tab-btn" data-tab="workorders">施工單管理</button>
+                <button class="tab-btn" data-tab="qualifications">年度資格管理</button>
+                <button class="tab-btn" data-tab="facematch">FaceMatch 整合</button>
+            </div>
+            
+            <!-- 承攬商管理 -->
+            <div id="contractors" class="tab-content">
+                <div class="flex">
+                    <h2>承攬商管理</h2>
+                    <button class="btn btn-primary" id="addContractorBtn">新增承攬商</button>
+                </div>
+                
+                <div id="contractorForm" class="card hidden">
+                    <h3 id="contractorFormTitle">新增承攬商</h3>
+                    <form id="contractorFormElement">
+                        <div class="form-group">
+                            <label>公司名稱</label>
+                            <input type="text" id="contractorName" required />
+                        </div>
+                        <div class="form-group">
+                            <label>公司代碼</label>
+                            <input type="text" id="contractorCode" required />
+                        </div>
+                        <div class="form-group">
+                            <label>聯絡人</label>
+                            <input type="text" id="contractorContact" required />
+                        </div>
+                        <div class="form-group">
+                            <label>聯絡電話</label>
+                            <input type="text" id="contractorPhone" required />
+                        </div>
+                        <div class="form-group">
+                            <label>狀態</label>
+                            <select id="contractorStatus">
+                                <option value="ACTIVE">啟用</option>
+                                <option value="INACTIVE">停用</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success" id="contractorSubmitBtn">新增</button>
+                        <button type="button" class="btn" id="contractorCancelBtn">取消</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>公司名稱</th>
+                                <th>代碼</th>
+                                <th>聯絡人</th>
+                                <th>電話</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractorsTable">
+                            <tr><td colspan="6">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 其他標籤內容簡化版本 -->
+            <div id="workorders" class="tab-content hidden">
+                <h2>施工單管理</h2>
+                <p>功能開發中...</p>
+            </div>
+
+            <div id="qualifications" class="tab-content hidden">
+                <h2>年度資格管理</h2>
+                <p>功能開發中...</p>
+            </div>
+
+            <div id="facematch" class="tab-content hidden">
+                <h2>FaceMatch 整合管理</h2>
+                <p>功能開發中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        let currentUser = null;
+        let currentTab = 'contractors';
+        let editingItem = null;
+        
+        console.log('FaceMatch 系統啟動中...');
+        console.log('API 地址:', API_BASE);
+
+        // 工具函數
+        function showElement(element) {
+            if (element) element.classList.remove('hidden');
+        }
+
+        function hideElement(element) {
+            if (element) element.classList.add('hidden');
+        }
+
+        function showMessage(text, type = 'success', containerId = 'loginMessage') {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `<div class="message ${type}">${text}</div>`;
+                setTimeout(() => container.innerHTML = '', 5000);
+            }
+            console.log(`${type.toUpperCase()}: ${text}`);
+        }
+
+        // API 調用函數
+        async function apiCall(url, options = {}) {
+            try {
+                console.log(`API 調用: ${options.method || 'GET'} ${url}`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                console.log(`API 回應狀態: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('API 回應資料:', data);
+                return data;
+                
+            } catch (error) {
+                console.error('API 調用失敗:', error);
+                throw error;
+            }
+        }
+
+        // 登入功能
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('開始登入...');
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                showMessage('登入中...', 'success');
+                
+                const data = await apiCall(`${API_BASE}/login`, {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (data.success) {
+                    currentUser = data.user;
+                    document.getElementById('userName').textContent = data.user.name;
+                    hideElement(document.getElementById('loginSection'));
+                    showElement(document.getElementById('mainSystem'));
+                    showMessage('登入成功！', 'success');
+                    loadContractors();
+                } else {
+                    showMessage('登入失敗：' + (data.message || '用戶名或密碼錯誤'), 'error');
+                }
+            } catch (error) {
+                showMessage('登入錯誤: ' + error.message, 'error');
+            }
+        });
+
+        // 登出功能
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            currentUser = null;
+            hideElement(document.getElementById('mainSystem'));
+            showElement(document.getElementById('loginSection'));
+            showMessage('已登出', 'success');
+        });
+
+        // 標籤切換
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                // 更新按鈕狀態
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 顯示對應內容
+                document.querySelectorAll('.tab-content').forEach(content => hideElement(content));
+                showElement(document.getElementById(tab));
+                
+                currentTab = tab;
+                
+                // 只有承攬商標籤才載入數據
+                if (tab === 'contractors') {
+                    loadContractors();
+                }
+            });
+        });
+
+        // 承攬商管理
+        async function loadContractors() {
+            try {
+                console.log('載入承攬商列表...');
+                const data = await apiCall(`${API_BASE}/contractors`);
+                
+                if (data.success && Array.isArray(data.data)) {
+                    const tbody = document.getElementById('contractorsTable');
+                    tbody.innerHTML = data.data.map(contractor => `
+                        <tr>
+                            <td>${contractor.name}</td>
+                            <td>${contractor.code}</td>
+                            <td>${contractor.contact}</td>
+                            <td>${contractor.phone}</td>
+                            <td><span class="status-badge status-${contractor.status.toLowerCase()}">${contractor.status === 'ACTIVE' ? '啟用' : '停用'}</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editContractor(${contractor.id})">編輯</button>
+                                <button class="btn btn-danger" onclick="deleteContractor(${contractor.id})">刪除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    
+                    console.log(`成功載入 ${data.data.length} 筆承攬商記錄`);
+                } else {
+                    throw new Error('API 回應格式錯誤');
+                }
+            } catch (error) {
+                console.error('載入承攬商失敗:', error);
+                document.getElementById('contractorsTable').innerHTML = `
+                    <tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>
+                `;
+            }
+        }
+
+        // 承攬商表單事件
+        document.getElementById('addContractorBtn').addEventListener('click', () => {
+            showContractorForm();
+        });
+
+        document.getElementById('contractorCancelBtn').addEventListener('click', () => {
+            hideContractorForm();
+        });
+
+        document.getElementById('contractorFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveContractor();
+        });
+
+        function showContractorForm(contractor = null) {
+            editingItem = contractor;
+            const form = document.getElementById('contractorForm');
+            const title = document.getElementById('contractorFormTitle');
+            const submitBtn = document.getElementById('contractorSubmitBtn');
+
+            if (contractor) {
+                title.textContent = '編輯承攬商';
+                submitBtn.textContent = '更新';
+                document.getElementById('contractorName').value = contractor.name;
+                document.getElementById('contractorCode').value = contractor.code;
+                document.getElementById('contractorContact').value = contractor.contact;
+                document.getElementById('contractorPhone').value = contractor.phone;
+                document.getElementById('contractorStatus').value = contractor.status;
+            } else {
+                title.textContent = '新增承攬商';
+                submitBtn.textContent = '新增';
+                document.getElementById('contractorFormElement').reset();
+            }
+
+            showElement(form);
+        }
+
+        function hideContractorForm() {
+            hideElement(document.getElementById('contractorForm'));
+            editingItem = null;
+        }
+
+        async function saveContractor() {
+            const formData = {
+                name: document.getElementById('contractorName').value,
+                code: document.getElementById('contractorCode').value,
+                contact: document.getElementById('contractorContact').value,
+                phone: document.getElementById('contractorPhone').value,
+                status: document.getElementById('contractorStatus').value
+            };
+
+            try {
+                const url = editingItem ? `${API_BASE}/contractors/${editingItem.id}` : `${API_BASE}/contractors`;
+                const method = editingItem ? 'PUT' : 'POST';
+
+                const data = await apiCall(url, {
+                    method,
+                    body: JSON.stringify(formData)
+                });
+
+                if (data.success) {
+                    hideContractorForm();
+                    loadContractors();
+                    showMessage(editingItem ? '承攬商更新成功' : '承攬商新增成功', 'success', 'contractorMessage');
+                }
+            } catch (error) {
+                showMessage('操作失敗: ' + error.message, 'error', 'contractorMessage');
+            }
+        }
+
+        // 全域函數（供按鈕調用）
+        window.editContractor = async function(id) {
+            try {
+                const data = await apiCall(`${API_BASE}/contractors`);
+                if (data.success) {
+                    const contractor = data.data.find(c => c.id === id);
+                    if (contractor) {
+                        showContractorForm(contractor);
+                    }
+                }
+            } catch (error) {
+                showMessage('載入承攬商資料失敗', 'error');
+            }
+        };
+
+        window.deleteContractor = async function(id) {
+            if (!confirm('確定要刪除嗎？')) return;
+
+            try {
+                const data = await apiCall(`${API_BASE}/contractors/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (data.success) {
+                    loadContractors();
+                    showMessage('承攬商刪除成功', 'success');
+                }
+            } catch (error) {
+                showMessage('刪除失敗: ' + error.message, 'error');
+            }
+        };
+
+        // 頁面載入時的初始化
+        window.addEventListener('load', () => {
+            console.log('✅ FaceMatch 極簡管理系統已載入');
+            console.log('🔗 後端 API:', API_BASE);
+            console.log('👤 請使用 admin/admin123 登入');
+        });
+    </script>
+</body>
+</html>

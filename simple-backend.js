@@ -6,7 +6,12 @@ const app = express();
 const port = 5001;
 
 // 中間件
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3002', 'http://127.0.0.1:3002'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // 模擬資料庫
