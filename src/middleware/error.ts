@@ -65,6 +65,6 @@ export const errorHandler = (
 export const notFound = (req: Request, res: Response<ApiResponse>): void => {
   res.status(404).json({
     success: false,
-    message: '找不到請求的資源'
+    message: '找不到該路由'
   });
 };

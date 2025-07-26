@@ -57,16 +57,42 @@ export async function seedDatabase(): Promise<void> {
     logger.info('建立 MANAGER 用戶成功');
 
     // 建立測試承攬商
-    const testContractor = new Contractor({
-      name: '測試承攬商有限公司',
-      code: 'TEST001',
-      status: 'ACTIVE',
-      contactPerson: '張三',
-      contactPhone: '02-1234-5678',
-      contractValidFrom: new Date(),
-      contractValidTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 一年後
-    });
-    await testContractor.save();
+    const testContractors = [
+      {
+        name: '台灣建設工程有限公司',
+        code: 'TWC001',
+        status: 'ACTIVE',
+        contactPerson: '張建明',
+        contactPhone: '02-2345-6789',
+        contractValidFrom: new Date(),
+        contractValidTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      },
+      {
+        name: '永豐營造股份有限公司',
+        code: 'YFC002',
+        status: 'ACTIVE',
+        contactPerson: '李永豐',
+        contactPhone: '04-2468-1357',
+        contractValidFrom: new Date(),
+        contractValidTo: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000)
+      },
+      {
+        name: '中華機電工程公司',
+        code: 'CHE003',
+        status: 'SUSPENDED',
+        contactPerson: '王機電',
+        contactPhone: '07-3691-2580',
+        contractValidFrom: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
+        contractValidTo: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
+      }
+    ];
+
+    const savedContractors = [];
+    for (const contractorData of testContractors) {
+      const contractor = new Contractor(contractorData);
+      await contractor.save();
+      savedContractors.push(contractor);
+    }
     logger.info('建立測試承攬商成功');
 
     // 建立承攬商用戶
@@ -77,7 +103,7 @@ export async function seedDatabase(): Promise<void> {
       passwordHash: contractorPassword,
       name: '承攬商用戶',
       role: 'CONTRACTOR',
-      contractorId: testContractor._id,
+      contractorId: savedContractors[0]._id,
       permissions: ['person:*', 'work-order:create'],
       isActive: true
     });

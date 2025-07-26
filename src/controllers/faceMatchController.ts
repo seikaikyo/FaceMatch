@@ -1,10 +1,35 @@
 import { Request, Response } from 'express';
 import { FaceMatchSyncService } from '../services/FaceMatchSyncService';
+import { FaceMatchClient, PhotoUploadRequest, PhotoCompareRequest } from '../services/FaceMatchClient';
 import { ApiResponse } from '../types';
 import logger from '../utils/logger';
+import multer from 'multer';
+import path from 'path';
 
 export class FaceMatchController {
   private static syncService = new FaceMatchSyncService();
+  private static faceMatchClient = new FaceMatchClient();
+
+  /**
+   * 文件上傳配置
+   */
+  private static uploadConfig = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('只允許上傳 JPEG、JPG、PNG 格式的圖片'));
+      }
+    }
+  });
 
   /**
    * 同步單一施工單到 FaceMatch
@@ -263,5 +288,366 @@ export class FaceMatchController {
         message: '獲取同步統計失敗'
       });
     }
+  }
+
+  /**
+   * 上傳人員照片
+   */
+  static async uploadPersonPhoto(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { personId } = req.params;
+      const file = req.file;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權上傳照片'
+        });
+        return;
+      }
+
+      if (!file) {
+        res.status(400).json({
+          success: false,
+          message: '請選擇要上傳的照片'
+        });
+        return;
+      }
+
+      // 轉換為 Base64
+      const photoBase64 = file.buffer.toString('base64');
+
+      const uploadRequest: PhotoUploadRequest = {
+        personId,
+        photoBase64,
+        filename: file.originalname
+      };
+
+      const result = await this.faceMatchClient.uploadPersonPhoto(uploadRequest);
+
+      logger.info('上傳人員照片成功', {
+        personId,
+        filename: file.originalname,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: '照片上傳成功',
+        data: result
+      });
+    } catch (error) {
+      logger.error('上傳人員照片失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '照片上傳失敗'
+      });
+    }
+  }
+
+  /**
+   * 批次上傳人員照片
+   */
+  static async batchUploadPhotos(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const { personIds } = req.body;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權批次上傳照片'
+        });
+        return;
+      }
+
+      if (!files || files.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: '請選擇要上傳的照片'
+        });
+        return;
+      }
+
+      if (!personIds || !Array.isArray(personIds) || personIds.length !== files.length) {
+        res.status(400).json({
+          success: false,
+          message: '人員 ID 數量與照片數量不符'
+        });
+        return;
+      }
+
+      const uploadRequests: PhotoUploadRequest[] = files.map((file, index) => ({
+        personId: personIds[index],
+        photoBase64: file.buffer.toString('base64'),
+        filename: file.originalname
+      }));
+
+      const result = await this.faceMatchClient.batchUploadPhotos(uploadRequests);
+
+      logger.info('批次上傳照片成功', {
+        count: files.length,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: `批次上傳 ${files.length} 張照片成功`,
+        data: result
+      });
+    } catch (error) {
+      logger.error('批次上傳照片失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '批次上傳照片失敗'
+      });
+    }
+  }
+
+  /**
+   * 更新人員照片
+   */
+  static async updatePersonPhoto(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { personId } = req.params;
+      const file = req.file;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權更新照片'
+        });
+        return;
+      }
+
+      if (!file) {
+        res.status(400).json({
+          success: false,
+          message: '請選擇要更新的照片'
+        });
+        return;
+      }
+
+      const photoBase64 = file.buffer.toString('base64');
+
+      const updateRequest: PhotoUploadRequest = {
+        personId,
+        photoBase64,
+        filename: file.originalname
+      };
+
+      const result = await this.faceMatchClient.updatePersonPhoto(updateRequest);
+
+      logger.info('更新人員照片成功', {
+        personId,
+        filename: file.originalname,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: '照片更新成功',
+        data: result
+      });
+    } catch (error) {
+      logger.error('更新人員照片失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '照片更新失敗'
+      });
+    }
+  }
+
+  /**
+   * 刪除人員照片
+   */
+  static async deletePersonPhoto(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { personId } = req.params;
+      const { photoId } = req.query;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權刪除照片'
+        });
+        return;
+      }
+
+      const result = await this.faceMatchClient.deletePersonPhoto(personId, photoId as string);
+
+      logger.info('刪除人員照片成功', {
+        personId,
+        photoId,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: '照片刪除成功',
+        data: result
+      });
+    } catch (error) {
+      logger.error('刪除人員照片失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '照片刪除失敗'
+      });
+    }
+  }
+
+  /**
+   * 獲取人員照片列表
+   */
+  static async getPersonPhotos(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { personId } = req.params;
+
+      const result = await this.faceMatchClient.getPersonPhotos(personId);
+
+      res.json({
+        success: true,
+        message: '獲取人員照片成功',
+        data: result
+      });
+    } catch (error) {
+      logger.error('獲取人員照片失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: '獲取人員照片失敗'
+      });
+    }
+  }
+
+  /**
+   * 照片比對
+   */
+  static async comparePhotos(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { targetPersonId } = req.params;
+      const file = req.file;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權進行照片比對'
+        });
+        return;
+      }
+
+      if (!file) {
+        res.status(400).json({
+          success: false,
+          message: '請選擇要比對的照片'
+        });
+        return;
+      }
+
+      const sourcePhotoBase64 = file.buffer.toString('base64');
+
+      const compareRequest: PhotoCompareRequest = {
+        sourcePhotoBase64,
+        targetPersonId
+      };
+
+      const result = await this.faceMatchClient.comparePhotos(compareRequest);
+
+      logger.info('照片比對完成', {
+        targetPersonId,
+        similarity: result.similarity,
+        isMatch: result.isMatch,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: '照片比對完成',
+        data: result
+      });
+    } catch (error) {
+      logger.error('照片比對失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '照片比對失敗'
+      });
+    }
+  }
+
+  /**
+   * 批次照片比對
+   */
+  static async batchComparePhotos(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const { targetPersonIds } = req.body;
+
+      // 權限檢查
+      if (!['EHS', 'MANAGER', 'ADMIN'].includes(req.user!.role)) {
+        res.status(403).json({
+          success: false,
+          message: '無權進行批次照片比對'
+        });
+        return;
+      }
+
+      if (!files || files.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: '請選擇要比對的照片'
+        });
+        return;
+      }
+
+      if (!targetPersonIds || !Array.isArray(targetPersonIds) || targetPersonIds.length !== files.length) {
+        res.status(400).json({
+          success: false,
+          message: '人員 ID 數量與照片數量不符'
+        });
+        return;
+      }
+
+      const compareRequests: PhotoCompareRequest[] = files.map((file, index) => ({
+        sourcePhotoBase64: file.buffer.toString('base64'),
+        targetPersonId: targetPersonIds[index]
+      }));
+
+      const results = await this.faceMatchClient.batchComparePhotos(compareRequests);
+
+      logger.info('批次照片比對完成', {
+        count: files.length,
+        userId: req.user!._id
+      });
+
+      res.json({
+        success: true,
+        message: `批次比對 ${files.length} 張照片完成`,
+        data: results
+      });
+    } catch (error) {
+      logger.error('批次照片比對失敗:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : '批次照片比對失敗'
+      });
+    }
+  }
+
+  /**
+   * 獲取文件上傳中間件
+   */
+  static getUploadMiddleware() {
+    return this.uploadConfig.single('photo');
+  }
+
+  /**
+   * 獲取批次文件上傳中間件
+   */
+  static getBatchUploadMiddleware() {
+    return this.uploadConfig.array('photos', 10);
   }
 }

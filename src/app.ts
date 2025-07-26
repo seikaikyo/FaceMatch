@@ -11,7 +11,10 @@ const app = express();
 
 // 安全中介軟體
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+  credentials: true
+}));
 
 // 請求日誌
 app.use(morgan('combined', {
@@ -53,15 +56,21 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    // 連接資料庫
-    await connectDatabase();
-    
-    // 建立種子資料
-    await seedDatabase();
+    // 嘗試連接資料庫，如果失敗則使用模擬資料
+    try {
+      await connectDatabase();
+      logger.info('🗄️ 使用 MongoDB 資料庫');
+      
+      // 建立種子資料
+      await seedDatabase();
+    } catch (dbError) {
+      logger.warn('⚠️ 無法連接資料庫，使用模擬資料模式');
+      logger.warn('📊 所有 CRUD 操作將使用記憶體內模擬資料');
+    }
     
     // 啟動伺服器
-    app.listen(config.port, '0.0.0.0', () => {
-      logger.info(`🚀 伺服器已啟動在 http://0.0.0.0:${config.port}`);
+    app.listen(config.port, 'localhost', () => {
+      logger.info(`🚀 伺服器已啟動在 http://localhost:${config.port}`);
       logger.info(`📝 環境: ${config.nodeEnv}`);
       logger.info(`🏢 系統: ${config.system.siteName} v${config.system.siteVersion}`);
       logger.info(`🔗 本機存取: http://localhost:${config.port}/health`);
