@@ -247,7 +247,7 @@
             <div id="contractors" class="tab-content">
                 <div class="flex">
                     <h2>承攬商管理</h2>
-                    <button class="btn btn-primary" id="addContractorBtn">新增承攬商</button>
+                    <button class="btn btn-primary" onclick="showForm('contractor')">新增承攬商</button>
                 </div>
                 
                 <div id="contractorForm" class="card hidden">
@@ -276,8 +276,8 @@
                                 <option value="INACTIVE">停用</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success" id="contractorSubmitBtn">新增</button>
-                        <button type="button" class="btn" id="contractorCancelBtn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn" onclick="hideForm('contractor')">取消</button>
                     </form>
                 </div>
                 
@@ -300,20 +300,175 @@
                 </div>
             </div>
 
-            <!-- 其他標籤內容簡化版本 -->
+            <!-- 施工單管理 -->
             <div id="workorders" class="tab-content hidden">
-                <h2>施工單管理</h2>
-                <p>功能開發中...</p>
+                <div class="flex">
+                    <h2>施工單管理</h2>
+                    <button class="btn btn-primary" onclick="showForm('workorder')">新增施工單</button>
+                </div>
+                
+                <div id="workorderForm" class="card hidden">
+                    <h3 id="workorderFormTitle">新增施工單</h3>
+                    <form id="workorderFormElement">
+                        <div class="form-group">
+                            <label>施工單號</label>
+                            <input type="text" id="workorderNumber" required />
+                        </div>
+                        <div class="form-group">
+                            <label>工程標題</label>
+                            <input type="text" id="workorderTitle" required />
+                        </div>
+                        <div class="form-group">
+                            <label>承攬商</label>
+                            <select id="workorderContractor" required>
+                                <option value="">請選擇承攬商</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>施工地點</label>
+                            <input type="text" id="workorderLocation" required />
+                        </div>
+                        <div class="form-group">
+                            <label>狀態</label>
+                            <select id="workorderStatus">
+                                <option value="PENDING">待審核</option>
+                                <option value="APPROVED">已核准</option>
+                                <option value="COMPLETED">已完成</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn" onclick="hideForm('workorder')">取消</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>施工單號</th>
+                                <th>工程標題</th>
+                                <th>承攬商</th>
+                                <th>施工地點</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workordersTable">
+                            <tr><td colspan="6">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            <!-- 年度資格管理 -->
             <div id="qualifications" class="tab-content hidden">
-                <h2>年度資格管理</h2>
-                <p>功能開發中...</p>
+                <div class="flex">
+                    <h2>年度資格管理</h2>
+                    <button class="btn btn-primary" onclick="showForm('qualification')">新增資格</button>
+                </div>
+                
+                <div id="qualificationForm" class="card hidden">
+                    <h3 id="qualificationFormTitle">新增資格</h3>
+                    <form id="qualificationFormElement">
+                        <div class="form-group">
+                            <label>人員姓名</label>
+                            <input type="text" id="qualificationPersonName" required />
+                        </div>
+                        <div class="form-group">
+                            <label>資格類型</label>
+                            <select id="qualificationType">
+                                <option value="SAFETY">安全資格</option>
+                                <option value="TECHNICAL">技術資格</option>
+                                <option value="MANAGEMENT">管理資格</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>資格名稱</label>
+                            <input type="text" id="qualificationName" required />
+                        </div>
+                        <div class="form-group">
+                            <label>有效期限</label>
+                            <input type="date" id="qualificationValidTo" required />
+                        </div>
+                        <div class="form-group">
+                            <label>狀態</label>
+                            <select id="qualificationStatus">
+                                <option value="VALID">有效</option>
+                                <option value="EXPIRES_SOON">即將到期</option>
+                                <option value="EXPIRED">已過期</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn" onclick="hideForm('qualification')">取消</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>人員姓名</th>
+                                <th>資格類型</th>
+                                <th>資格名稱</th>
+                                <th>有效期限</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qualificationsTable">
+                            <tr><td colspan="6">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            <!-- FaceMatch 整合管理 -->
             <div id="facematch" class="tab-content hidden">
-                <h2>FaceMatch 整合管理</h2>
-                <p>功能開發中...</p>
+                <div class="flex">
+                    <h2>FaceMatch 整合管理</h2>
+                    <button class="btn btn-primary" onclick="showForm('facematch')">新增記錄</button>
+                </div>
+                
+                <div id="facematchForm" class="card hidden">
+                    <h3 id="facematchFormTitle">新增記錄</h3>
+                    <form id="facematchFormElement">
+                        <div class="form-group">
+                            <label>人員姓名</label>
+                            <input type="text" id="facematchPersonName" required />
+                        </div>
+                        <div class="form-group">
+                            <label>施工單 ID</label>
+                            <input type="number" id="facematchWorkOrderId" required />
+                        </div>
+                        <div class="form-group">
+                            <label>同步狀態</label>
+                            <select id="facematchStatus">
+                                <option value="PENDING">待同步</option>
+                                <option value="SUCCESS">同步成功</option>
+                                <option value="FAILED">同步失敗</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn" onclick="hideForm('facematch')">取消</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>人員姓名</th>
+                                <th>施工單 ID</th>
+                                <th>同步狀態</th>
+                                <th>同步時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facematchTable">
+                            <tr><td colspan="5">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -323,9 +478,9 @@
         let currentUser = null;
         let currentTab = 'contractors';
         let editingItem = null;
+        let editingType = null;
         
         console.log('FaceMatch 系統啟動中...');
-        console.log('API 地址:', API_BASE);
 
         // 工具函數
         function showElement(element) {
@@ -336,12 +491,8 @@
             if (element) element.classList.add('hidden');
         }
 
-        function showMessage(text, type = 'success', containerId = 'loginMessage') {
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = `<div class="message ${type}">${text}</div>`;
-                setTimeout(() => container.innerHTML = '', 5000);
-            }
+        function showMessage(text, type = 'success') {
+            alert(text); // 簡化的消息顯示
             console.log(`${type.toUpperCase()}: ${text}`);
         }
 
@@ -358,14 +509,12 @@
                     ...options
                 });
                 
-                console.log(`API 回應狀態: ${response.status}`);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
-                console.log('API 回應資料:', data);
+                console.log('API 回應:', data);
                 return data;
                 
             } catch (error) {
@@ -377,14 +526,11 @@
         // 登入功能
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('開始登入...');
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             try {
-                showMessage('登入中...', 'success');
-                
                 const data = await apiCall(`${API_BASE}/login`, {
                     method: 'POST',
                     body: JSON.stringify({ username, password })
@@ -395,10 +541,9 @@
                     document.getElementById('userName').textContent = data.user.name;
                     hideElement(document.getElementById('loginSection'));
                     showElement(document.getElementById('mainSystem'));
-                    showMessage('登入成功！', 'success');
-                    loadContractors();
+                    loadData();
                 } else {
-                    showMessage('登入失敗：' + (data.message || '用戶名或密碼錯誤'), 'error');
+                    showMessage('登入失敗', 'error');
                 }
             } catch (error) {
                 showMessage('登入錯誤: ' + error.message, 'error');
@@ -410,7 +555,6 @@
             currentUser = null;
             hideElement(document.getElementById('mainSystem'));
             showElement(document.getElementById('loginSection'));
-            showMessage('已登出', 'success');
         });
 
         // 標籤切換
@@ -418,110 +562,234 @@
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
                 
-                // 更新按鈕狀態
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
-                // 顯示對應內容
                 document.querySelectorAll('.tab-content').forEach(content => hideElement(content));
                 showElement(document.getElementById(tab));
                 
                 currentTab = tab;
-                
-                // 只有承攬商標籤才載入數據
-                if (tab === 'contractors') {
-                    loadContractors();
-                }
+                loadData();
             });
         });
+
+        // 載入數據
+        async function loadData() {
+            switch (currentTab) {
+                case 'contractors':
+                    await loadContractors();
+                    break;
+                case 'workorders':
+                    await loadWorkOrders();
+                    await loadContractorsForSelect();
+                    break;
+                case 'qualifications':
+                    await loadQualifications();
+                    break;
+                case 'facematch':
+                    await loadFaceMatch();
+                    break;
+            }
+        }
 
         // 承攬商管理
         async function loadContractors() {
             try {
-                console.log('載入承攬商列表...');
                 const data = await apiCall(`${API_BASE}/contractors`);
-                
-                if (data.success && Array.isArray(data.data)) {
+                if (data.success) {
                     const tbody = document.getElementById('contractorsTable');
-                    tbody.innerHTML = data.data.map(contractor => `
+                    tbody.innerHTML = data.data.map(item => `
                         <tr>
-                            <td>${contractor.name}</td>
-                            <td>${contractor.code}</td>
-                            <td>${contractor.contact}</td>
-                            <td>${contractor.phone}</td>
-                            <td><span class="status-badge status-${contractor.status.toLowerCase()}">${contractor.status === 'ACTIVE' ? '啟用' : '停用'}</span></td>
+                            <td>${item.name}</td>
+                            <td>${item.code}</td>
+                            <td>${item.contact}</td>
+                            <td>${item.phone}</td>
+                            <td><span class="status-badge status-${item.status.toLowerCase()}">${item.status === 'ACTIVE' ? '啟用' : '停用'}</span></td>
                             <td>
-                                <button class="btn btn-primary" onclick="editContractor(${contractor.id})">編輯</button>
-                                <button class="btn btn-danger" onclick="deleteContractor(${contractor.id})">刪除</button>
+                                <button class="btn btn-primary" onclick="editItem('contractor', ${item.id})">編輯</button>
+                                <button class="btn btn-danger" onclick="deleteItem('contractor', ${item.id})">刪除</button>
                             </td>
                         </tr>
                     `).join('');
-                    
-                    console.log(`成功載入 ${data.data.length} 筆承攬商記錄`);
-                } else {
-                    throw new Error('API 回應格式錯誤');
                 }
             } catch (error) {
-                console.error('載入承攬商失敗:', error);
-                document.getElementById('contractorsTable').innerHTML = `
-                    <tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>
-                `;
+                document.getElementById('contractorsTable').innerHTML = `<tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>`;
             }
         }
 
-        // 承攬商表單事件
-        document.getElementById('addContractorBtn').addEventListener('click', () => {
-            showContractorForm();
-        });
-
-        document.getElementById('contractorCancelBtn').addEventListener('click', () => {
-            hideContractorForm();
-        });
-
-        document.getElementById('contractorFormElement').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await saveContractor();
-        });
-
-        function showContractorForm(contractor = null) {
-            editingItem = contractor;
-            const form = document.getElementById('contractorForm');
-            const title = document.getElementById('contractorFormTitle');
-            const submitBtn = document.getElementById('contractorSubmitBtn');
-
-            if (contractor) {
-                title.textContent = '編輯承攬商';
-                submitBtn.textContent = '更新';
-                document.getElementById('contractorName').value = contractor.name;
-                document.getElementById('contractorCode').value = contractor.code;
-                document.getElementById('contractorContact').value = contractor.contact;
-                document.getElementById('contractorPhone').value = contractor.phone;
-                document.getElementById('contractorStatus').value = contractor.status;
-            } else {
-                title.textContent = '新增承攬商';
-                submitBtn.textContent = '新增';
-                document.getElementById('contractorFormElement').reset();
+        // 施工單管理
+        async function loadWorkOrders() {
+            try {
+                const data = await apiCall(`${API_BASE}/work-orders`);
+                if (data.success) {
+                    const tbody = document.getElementById('workordersTable');
+                    tbody.innerHTML = data.data.map(item => `
+                        <tr>
+                            <td>${item.orderNumber}</td>
+                            <td>${item.title}</td>
+                            <td>${item.contractorName || '未知'}</td>
+                            <td>${item.location}</td>
+                            <td><span class="status-badge status-${item.status.toLowerCase()}">${getStatusText(item.status, 'workorder')}</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editItem('workorder', ${item.id})">編輯</button>
+                                <button class="btn btn-danger" onclick="deleteItem('workorder', ${item.id})">刪除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('workordersTable').innerHTML = `<tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>`;
             }
+        }
 
+        async function loadContractorsForSelect() {
+            try {
+                const data = await apiCall(`${API_BASE}/contractors`);
+                if (data.success) {
+                    const select = document.getElementById('workorderContractor');
+                    select.innerHTML = '<option value="">請選擇承攬商</option>' + 
+                        data.data.map(contractor => 
+                            `<option value="${contractor.id}">${contractor.name}</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('載入承攬商選項失敗', error);
+            }
+        }
+
+        // 年度資格管理
+        async function loadQualifications() {
+            try {
+                const data = await apiCall(`${API_BASE}/qualifications`);
+                if (data.success) {
+                    const tbody = document.getElementById('qualificationsTable');
+                    tbody.innerHTML = data.data.map(item => `
+                        <tr>
+                            <td>${item.personName}</td>
+                            <td>${getStatusText(item.type, 'qualification')}</td>
+                            <td>${item.name}</td>
+                            <td>${item.validTo}</td>
+                            <td><span class="status-badge status-${item.status.toLowerCase().replace('_', '-')}">${getStatusText(item.status, 'qualification')}</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editItem('qualification', ${item.id})">編輯</button>
+                                <button class="btn btn-danger" onclick="deleteItem('qualification', ${item.id})">刪除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('qualificationsTable').innerHTML = `<tr><td colspan="6" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+            }
+        }
+
+        // FaceMatch 整合管理
+        async function loadFaceMatch() {
+            try {
+                const data = await apiCall(`${API_BASE}/facematch`);
+                if (data.success) {
+                    const tbody = document.getElementById('facematchTable');
+                    tbody.innerHTML = data.data.map(item => `
+                        <tr>
+                            <td>${item.personName}</td>
+                            <td>${item.workOrderId}</td>
+                            <td><span class="status-badge status-${item.status.toLowerCase()}">${getStatusText(item.status, 'facematch')}</span></td>
+                            <td>${item.syncTime ? new Date(item.syncTime).toLocaleString('zh-TW') : '-'}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editItem('facematch', ${item.id})">編輯</button>
+                                <button class="btn btn-danger" onclick="deleteItem('facematch', ${item.id})">刪除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('facematchTable').innerHTML = `<tr><td colspan="5" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+            }
+        }
+
+        // 狀態文字轉換
+        function getStatusText(status, type) {
+            const statusMaps = {
+                workorder: {
+                    'PENDING': '待審核',
+                    'APPROVED': '已核准',
+                    'COMPLETED': '已完成'
+                },
+                qualification: {
+                    'SAFETY': '安全資格',
+                    'TECHNICAL': '技術資格',
+                    'MANAGEMENT': '管理資格',
+                    'VALID': '有效',
+                    'EXPIRES_SOON': '即將到期',
+                    'EXPIRED': '已過期'
+                },
+                facematch: {
+                    'PENDING': '待同步',
+                    'SUCCESS': '同步成功',
+                    'FAILED': '同步失敗'
+                }
+            };
+            return statusMaps[type]?.[status] || status;
+        }
+
+        // 表單顯示
+        function showForm(type, item = null) {
+            editingType = type;
+            editingItem = item;
+            
+            const form = document.getElementById(`${type}Form`);
+            const title = document.getElementById(`${type}FormTitle`);
+            
+            if (item) {
+                title.textContent = `編輯${getTypeTitle(type)}`;
+                fillForm(type, item);
+            } else {
+                title.textContent = `新增${getTypeTitle(type)}`;
+                document.getElementById(`${type}FormElement`).reset();
+            }
+            
             showElement(form);
         }
 
-        function hideContractorForm() {
-            hideElement(document.getElementById('contractorForm'));
+        function hideForm(type) {
+            hideElement(document.getElementById(`${type}Form`));
             editingItem = null;
+            editingType = null;
         }
 
-        async function saveContractor() {
-            const formData = {
-                name: document.getElementById('contractorName').value,
-                code: document.getElementById('contractorCode').value,
-                contact: document.getElementById('contractorContact').value,
-                phone: document.getElementById('contractorPhone').value,
-                status: document.getElementById('contractorStatus').value
+        function getTypeTitle(type) {
+            const titles = {
+                'contractor': '承攬商',
+                'workorder': '施工單',
+                'qualification': '資格',
+                'facematch': '記錄'
             };
+            return titles[type] || type;
+        }
 
+        function fillForm(type, item) {
+            Object.keys(item).forEach(key => {
+                const element = document.getElementById(`${type}${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                if (element) {
+                    element.value = item[key];
+                }
+            });
+        }
+
+        // 表單提交事件
+        ['contractor', 'workorder', 'qualification', 'facematch'].forEach(type => {
+            document.getElementById(`${type}FormElement`).addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveItem(type);
+            });
+        });
+
+        // 保存項目
+        async function saveItem(type) {
+            const formData = getFormData(type);
+            
             try {
-                const url = editingItem ? `${API_BASE}/contractors/${editingItem.id}` : `${API_BASE}/contractors`;
+                const endpoint = getEndpoint(type);
+                const url = editingItem ? `${API_BASE}/${endpoint}/${editingItem.id}` : `${API_BASE}/${endpoint}`;
                 const method = editingItem ? 'PUT' : 'POST';
 
                 const data = await apiCall(url, {
@@ -530,48 +798,93 @@
                 });
 
                 if (data.success) {
-                    hideContractorForm();
-                    loadContractors();
-                    showMessage(editingItem ? '承攬商更新成功' : '承攬商新增成功', 'success', 'contractorMessage');
+                    hideForm(type);
+                    loadData();
+                    showMessage(`${getTypeTitle(type)}${editingItem ? '更新' : '新增'}成功`);
                 }
             } catch (error) {
-                showMessage('操作失敗: ' + error.message, 'error', 'contractorMessage');
+                showMessage(`操作失敗: ${error.message}`, 'error');
             }
         }
 
-        // 全域函數（供按鈕調用）
-        window.editContractor = async function(id) {
+        function getFormData(type) {
+            const forms = {
+                contractor: () => ({
+                    name: document.getElementById('contractorName').value,
+                    code: document.getElementById('contractorCode').value,
+                    contact: document.getElementById('contractorContact').value,
+                    phone: document.getElementById('contractorPhone').value,
+                    status: document.getElementById('contractorStatus').value
+                }),
+                workorder: () => ({
+                    orderNumber: document.getElementById('workorderNumber').value,
+                    title: document.getElementById('workorderTitle').value,
+                    contractorId: parseInt(document.getElementById('workorderContractor').value),
+                    location: document.getElementById('workorderLocation').value,
+                    status: document.getElementById('workorderStatus').value
+                }),
+                qualification: () => ({
+                    personName: document.getElementById('qualificationPersonName').value,
+                    type: document.getElementById('qualificationType').value,
+                    name: document.getElementById('qualificationName').value,
+                    validTo: document.getElementById('qualificationValidTo').value,
+                    status: document.getElementById('qualificationStatus').value
+                }),
+                facematch: () => ({
+                    personName: document.getElementById('facematchPersonName').value,
+                    workOrderId: parseInt(document.getElementById('facematchWorkOrderId').value),
+                    status: document.getElementById('facematchStatus').value
+                })
+            };
+            return forms[type]();
+        }
+
+        function getEndpoint(type) {
+            const endpoints = {
+                'contractor': 'contractors',
+                'workorder': 'work-orders',
+                'qualification': 'qualifications',
+                'facematch': 'facematch'
+            };
+            return endpoints[type];
+        }
+
+        // 編輯項目
+        async function editItem(type, id) {
             try {
-                const data = await apiCall(`${API_BASE}/contractors`);
+                const endpoint = getEndpoint(type);
+                const data = await apiCall(`${API_BASE}/${endpoint}`);
                 if (data.success) {
-                    const contractor = data.data.find(c => c.id === id);
-                    if (contractor) {
-                        showContractorForm(contractor);
+                    const item = data.data.find(i => i.id === id);
+                    if (item) {
+                        showForm(type, item);
                     }
                 }
             } catch (error) {
-                showMessage('載入承攬商資料失敗', 'error');
+                showMessage(`載入${getTypeTitle(type)}資料失敗`, 'error');
             }
-        };
+        }
 
-        window.deleteContractor = async function(id) {
-            if (!confirm('確定要刪除嗎？')) return;
+        // 刪除項目
+        async function deleteItem(type, id) {
+            if (!confirm(`確定要刪除這個${getTypeTitle(type)}嗎？`)) return;
 
             try {
-                const data = await apiCall(`${API_BASE}/contractors/${id}`, {
+                const endpoint = getEndpoint(type);
+                const data = await apiCall(`${API_BASE}/${endpoint}/${id}`, {
                     method: 'DELETE'
                 });
 
                 if (data.success) {
-                    loadContractors();
-                    showMessage('承攬商刪除成功', 'success');
+                    loadData();
+                    showMessage(`${getTypeTitle(type)}刪除成功`);
                 }
             } catch (error) {
-                showMessage('刪除失敗: ' + error.message, 'error');
+                showMessage(`刪除失敗: ${error.message}`, 'error');
             }
-        };
+        }
 
-        // 頁面載入時的初始化
+        // 初始化
         window.addEventListener('load', () => {
             console.log('✅ FaceMatch 極簡管理系統已載入');
             console.log('🔗 後端 API:', API_BASE);
