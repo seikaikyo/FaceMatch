@@ -13,15 +13,56 @@
             box-sizing: border-box;
         }
 
+        :root {
+            /* Light theme variables */
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f7fafc;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-muted: #a0aec0;
+            --border-color: #e2e8f0;
+            --border-light: #cbd5e0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --accent-primary: #4a5568;
+            --accent-secondary: #2d3748;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --error: #f56565;
+            --info: #4299e1;
+        }
+
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --text-primary: #f7fafc;
+            --text-secondary: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: #4a5568;
+            --border-light: #718096;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --accent-primary: #e2e8f0;
+            --accent-secondary: #f7fafc;
+            --success: #68d391;
+            --warning: #f6ad55;
+            --error: #fc8181;
+            --info: #63b3ed;
+        }
+
         body {
             font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
+            background: var(--bg-primary);
             min-height: 100vh;
-            color: #2d3748;
+            color: var(--text-primary);
             line-height: 1.7;
             letter-spacing: 0.025em;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .admin-layout {
@@ -31,25 +72,27 @@
         
         .sidebar {
             width: 280px;
-            background: #ffffff;
-            border-right: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
             box-shadow: 2px 0 4px rgba(0, 0, 0, 0.02);
             position: fixed;
             height: 100vh;
             overflow-y: auto;
             z-index: 100;
+            transition: all 0.3s ease;
         }
         
         .main-content {
             flex: 1;
             margin-left: 280px;
-            background: #f8f9fa;
+            background: var(--bg-primary);
             min-height: 100vh;
+            transition: all 0.3s ease;
         }
         
         .topbar {
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             padding: 16px 24px;
             display: flex;
             align-items: center;
@@ -57,6 +100,7 @@
             position: sticky;
             top: 0;
             z-index: 50;
+            transition: all 0.3s ease;
         }
         
         .content-area {
@@ -75,21 +119,24 @@
 
         .sidebar-header {
             padding: 24px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
         .sidebar-header h1 {
             font-weight: 600;
             font-size: 1.5rem;
             margin: 0;
-            color: #2d3748;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 12px;
         }
         
         .sidebar-header .fas {
-            color: #4a5568;
+            color: var(--text-secondary);
         }
 
         .nav {
@@ -104,7 +151,7 @@
             padding: 12px 24px;
             background: transparent;
             border: none;
-            color: #4a5568;
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: 400;
@@ -114,18 +161,19 @@
         }
 
         .nav button.active {
-            background: #f7fafc;
-            color: #2d3748;
-            border-right: 3px solid #4a5568;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-right: 3px solid var(--accent-primary);
             font-weight: 500;
         }
 
         .nav button:hover {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
         }
 
         .nav button.active:hover {
-            background: #edf2f7;
+            background: var(--bg-tertiary);
+            opacity: 0.8;
         }
 
         .flex {
@@ -146,7 +194,7 @@
             margin: 0;
             font-size: 1.5rem;
             font-weight: 600;
-            color: #2d3748;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -156,7 +204,7 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            color: #4a5568;
+            color: var(--text-secondary);
             font-size: 14px;
         }
         
@@ -168,26 +216,27 @@
         
         .role-selector select {
             padding: 6px 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            background: #ffffff;
-            color: #2d3748;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             font-size: 14px;
+            transition: all 0.2s ease;
         }
 
         .card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-sm);
             transition: all 0.2s ease;
         }
         
         .card:hover {
-            border-color: #cbd5e0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--border-light);
+            box-shadow: var(--shadow-md);
             transform: translateY(-1px);
         }
 
@@ -199,7 +248,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #4a5568;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
@@ -207,28 +256,28 @@
         .form-group select {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
-            background: #ffffff;
-            color: #2d3748;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             transition: all 0.2s ease;
         }
         
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #4a5568;
+            border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
         }
         
         .form-group input::placeholder {
-            color: #a0aec0;
+            color: var(--text-muted);
         }
 
         .btn {
             padding: 10px 20px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
@@ -240,41 +289,39 @@
             transition: all 0.2s ease;
             font-weight: 400;
             font-size: 14px;
-            background: #ffffff;
-            color: #4a5568;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
         }
         
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary { 
-            background: #4a5568;
+            background: var(--accent-primary);
             color: white;
-            border-color: #4a5568;
+            border-color: var(--accent-primary);
         }
         .btn-primary:hover { 
-            background: #2d3748;
-            border-color: #2d3748;
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
         }
         .btn-success { 
-            background: #48bb78;
+            background: var(--success);
             color: white;
-            border-color: #48bb78;
+            border-color: var(--success);
         }
         .btn-success:hover { 
-            background: #38a169;
-            border-color: #38a169;
+            opacity: 0.8;
         }
         .btn-danger { 
-            background: #f56565;
+            background: var(--error);
             color: white;
-            border-color: #f56565;
+            border-color: var(--error);
         }
         .btn-danger:hover { 
-            background: #e53e3e;
-            border-color: #e53e3e;
+            opacity: 0.8;
         }
 
         table {
@@ -283,29 +330,29 @@
             margin-top: 24px;
             border-radius: 8px;
             overflow: hidden;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
         }
 
         table th, table td {
             padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
         }
 
         table th {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
             font-weight: 500;
-            color: #4a5568;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
         table tr:hover {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
         }
         
         table td {
-            color: #2d3748;
+            color: var(--text-primary);
         }
 
         .status-badge {
@@ -372,18 +419,42 @@
             max-width: 400px;
             margin: 80px auto;
             padding: 40px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-md);
         }
 
         .login-form h2 {
             text-align: center;
             margin-bottom: 32px;
-            color: #4a5568;
+            color: var(--text-secondary);
             font-weight: 500;
             font-size: 1.75rem;
+        }
+        
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+        }
+        
+        #themeToggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        
+        #themeToggle:hover {
+            background: var(--bg-primary);
+            transform: none;
+            box-shadow: none;
         }
 
         .hidden {
@@ -536,6 +607,11 @@
             <div class="sidebar">
                 <div class="sidebar-header">
                     <h1><i class="fas fa-shield-alt"></i> FaceMatch</h1>
+                    <div class="theme-toggle">
+                        <button id="themeToggle" class="btn" style="padding: 8px; margin: 0;" title="切換主題">
+                            <i class="fas fa-moon" id="themeIcon"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="nav">
@@ -1157,6 +1233,85 @@
         
         console.log('FaceMatch 系統啟動中...');
         
+        // 主題管理
+        class ThemeManager {
+            constructor() {
+                this.theme = this.getStoredTheme() || this.getSystemTheme();
+                this.init();
+            }
+            
+            init() {
+                this.applyTheme(this.theme);
+                this.updateThemeIcon();
+                this.watchSystemTheme();
+                
+                // 綁定主題切換按鈕
+                document.addEventListener('DOMContentLoaded', () => {
+                    const themeToggle = document.getElementById('themeToggle');
+                    if (themeToggle) {
+                        themeToggle.addEventListener('click', () => this.toggleTheme());
+                    }
+                });
+            }
+            
+            getSystemTheme() {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'light';
+            }
+            
+            getStoredTheme() {
+                return localStorage.getItem('theme');
+            }
+            
+            storeTheme(theme) {
+                localStorage.setItem('theme', theme);
+            }
+            
+            applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                this.theme = theme;
+                this.storeTheme(theme);
+            }
+            
+            toggleTheme() {
+                const newTheme = this.theme === 'light' ? 'dark' : 'light';
+                this.applyTheme(newTheme);
+                this.updateThemeIcon();
+            }
+            
+            updateThemeIcon() {
+                const icon = document.getElementById('themeIcon');
+                if (icon) {
+                    if (this.theme === 'dark') {
+                        icon.className = 'fas fa-sun';
+                        icon.parentElement.title = '切換到亮色模式';
+                    } else {
+                        icon.className = 'fas fa-moon';
+                        icon.parentElement.title = '切換到深色模式';
+                    }
+                }
+            }
+            
+            watchSystemTheme() {
+                if (window.matchMedia) {
+                    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                    mediaQuery.addListener((e) => {
+                        // 只有在沒有手動設定主題時才跟隨系統
+                        if (!this.getStoredTheme()) {
+                            const systemTheme = e.matches ? 'dark' : 'light';
+                            this.applyTheme(systemTheme);
+                            this.updateThemeIcon();
+                        }
+                    });
+                }
+            }
+        }
+        
+        // 初始化主題管理器
+        const themeManager = new ThemeManager();
+        
         // AD 配置和驗證方式切換
         let adConfig = { enabled: false, domain: '' };
         
@@ -1378,6 +1533,12 @@
                     document.getElementById('userName').textContent = data.user.name;
                     hideElement(document.getElementById('loginSection'));
                     showElement(document.getElementById('mainSystem'));
+                    
+                    // 登入後更新主題圖標
+                    setTimeout(() => {
+                        themeManager.updateThemeIcon();
+                    }, 100);
+                    
                     loadData();
                 } else {
                     showMessage('登入失敗', 'error');
