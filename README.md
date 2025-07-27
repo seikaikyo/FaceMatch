@@ -48,11 +48,21 @@ node server.js               # 後端 (Port 5001)
 node static-server.js        # 前端 (Port 3002)
 ```
 
+#### 🐧 Rocky Linux VM 自動部署 (生產環境推薦)
+```bash
+# 一鍵自動部署到 Rocky Linux/CentOS/RHEL
+./deploy-rocky.sh
+
+# 詳細部署說明請參考
+cat DEPLOY.md
+```
+
 ### 💡 部署說明
 - **PM2 管理**: 生產環境推薦使用 PM2，支援自動重啟、日誌管理、進程監控
 - **跨平台支援**: WSL/Linux 使用 PM2，Windows 使用 start.bat
 - **服務監控**: PM2 提供實時狀態監控和自動故障恢復
 - **性能優勢**: PM2 啟動速度超快，零視窗干擾，專業級服務管理
+- **🚀 自動部署**: Rocky Linux VM 一鍵部署腳本，包含環境檢查、軟體安裝、系統配置
 
 ## 🌐 系統地址
 
@@ -175,6 +185,7 @@ FaceMatch/
 ├── start.bat                  # Windows 啟動腳本
 ├── start-pm2.sh               # Legacy PM2 啟動腳本
 ├── start-ts.sh                # TypeScript PM2 啟動腳本 ⭐
+├── deploy-rocky.sh            # Rocky Linux 自動部署腳本 🚀
 ├── ecosystem.config.js        # PM2 配置檔案 (雙版本支援)
 ├── tsconfig.json              # TypeScript 配置檔案 ⭐
 ├── package.json               # NPM 依賴和腳本
@@ -199,6 +210,7 @@ FaceMatch/
 ├── tests/                    # 測試檔案
 ├── legacy/                   # 舊版本檔案
 ├── docs/                     # 文檔檔案
+├── DEPLOY.md                 # Rocky Linux 部署指南 🚀
 ├── facematch.sqlite          # SQLite 資料庫
 └── README.md                 # 說明文件
 ```
@@ -311,7 +323,23 @@ FaceMatch/
 
 ## 📝 版本歷史
 
-### v2.2.0 - TypeScript + OpenAPI 企業級升級 (最新)
+### v2.3.0 - 生產環境部署升級 (最新)
+- 🚀 **Rocky Linux 自動部署** - 全自動 VM 部署腳本 (deploy-rocky.sh)
+- 🔧 **智能環境檢查** - 系統相容性、硬體資源、網路連接自動驗證
+- 📦 **一鍵軟體安裝** - Node.js 20 LTS + PM2 + 開發工具自動配置
+- ⚙️ **企業級系統配置** - 防火牆、SELinux、開機啟動自動設定
+- 📖 **完整部署指南** - DEPLOY.md 提供詳細說明和故障排除
+- 🛠️ **生產環境優化** - 適合 Rocky Linux/CentOS/RHEL 企業部署
+
+### v2.2.1 - API 功能修復與穩定性提升
+- 🔧 **修復年度資格管理 API 呼叫錯誤** - 修正前端 apiCall 函數語法
+- ✅ **功能恢復** - 年度資格續約、停用、重新啟用功能現已正常運作
+- ✅ **TypeScript 後端 API 實現** - 完整年度資格管理端點實現
+- ✅ **雙後端 API 支援** - 同時支援 Legacy JS 和 TypeScript 後端
+- 🛠️ **錯誤修復** - 解決 HTTP 404 錯誤，提升系統穩定性
+- 📝 **代碼清理** - 移除過時的控制器和服務檔案
+
+### v2.2.0 - TypeScript + OpenAPI 企業級升級
 - ✅ **TypeScript 後端** - 完整型別安全的企業級架構
 - ✅ **OpenAPI 3.0 規範** - 標準化 REST API 文檔和規範
 - ✅ **Swagger UI 整合** - 互動式 API 文檔和測試介面
