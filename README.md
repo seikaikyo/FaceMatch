@@ -27,10 +27,15 @@ node static-server.js        # 前端 (Port 3002)
 - ✅ 狀態管理 (啟用/停用)
 - ✅ 承攬商資料完整性驗證
 
-### 2. 📋 施工單管理 + 簽核工作流程
+### 2. 📋 施工單管理 + 增強型簽核工作流程
 - ✅ 建立、查看、編輯、刪除施工單
 - ✅ **多層級簽核流程** (職環安 → 再生經理)
-- ✅ **快速簽核功能** (一鍵核准/駁回/退回)
+- ✅ **增強型駁回系統** - 支援選擇性駁回路由
+  - 職環安：只能駁回給申請人 (符合業務邏輯)
+  - 經理：可選擇駁回給申請人或上一層職環安
+  - 管理員：特殊駁回權限，可駁回到任意層級
+- ✅ **企業級操作日誌** - 完整審計追蹤和分類搜尋
+- ✅ **會話管理系統** - 安全的用戶認證和權限控制
 - ✅ 簽核歷史追蹤
 - ✅ 狀態變更請求流程
 - ✅ 承攬商關聯管理
@@ -128,15 +133,18 @@ FaceMatch/
 - `PUT /api/contractors/:id` - 更新承攬商
 - `DELETE /api/contractors/:id` - 刪除承攬商
 
-### 施工單 + 簽核管理
+### 施工單 + 增強型簽核管理
 - `GET /api/work-orders` - 取得施工單列表
 - `POST /api/work-orders` - 建立施工單
 - `PUT /api/work-orders/:id` - 更新施工單
 - `DELETE /api/work-orders/:id` - 刪除施工單
 - `GET /api/work-orders/pending-approval` - 待簽核清單
-- `POST /api/work-orders/:id/quick-approve` - 快速簽核
-- `GET /api/work-orders/:id/history` - 簽核歷史
-- `POST /api/work-orders/:id/request-status-change` - 狀態變更請求
+- `POST /api/approvals/:id/submit` - 提交申請
+- `POST /api/approvals/:id/ehs` - 職環安簽核 (核准/駁回給申請人)
+- `POST /api/approvals/:id/manager` - 經理簽核 (核准/選擇性駁回)
+- `POST /api/approvals/:id/admin-reject` - 管理員特殊駁回
+- `POST /api/approvals/:id/resubmit` - 重新提交被駁回申請
+- `GET /api/approvals/:id/history` - 簽核歷史
 
 ### 年度資格 + 快速操作
 - `GET /api/qualifications` - 取得資格列表
@@ -163,6 +171,11 @@ FaceMatch/
 - `PUT /api/facematch/:id` - 更新記錄
 - `DELETE /api/facematch/:id` - 刪除記錄
 
+### 企業級日誌系統
+- `GET /api/logs` - 取得操作日誌 (支援分類搜尋)
+- `GET /api/logs/stats` - 日誌統計分析
+- `DELETE /api/logs/cleanup` - 清理舊日誌 (管理員專用)
+
 ## 🎯 使用說明
 
 ### 基本操作
@@ -172,11 +185,15 @@ FaceMatch/
 4. 使用測試帳號登入或聯絡管理員建立帳號
 5. 根據角色權限使用相應功能
 
-### 簽核工作流程
-1. **提交施工單** - 自動進入待簽核狀態
-2. **職環安簽核** - 第一層簽核 (核准/駁回/退回)
-3. **再生經理簽核** - 第二層簽核 (最終決定)
-4. **狀態更新** - 根據簽核結果更新施工單狀態
+### 增強型簽核工作流程
+1. **提交施工單** - 自動進入待職環安簽核狀態
+2. **職環安簽核** - 第一層簽核 (核准進入下一層/駁回給申請人)
+3. **再生經理簽核** - 第二層簽核，支援選擇性駁回：
+   - 核准：完成簽核流程
+   - 駁回給申請人：申請人可重新提交
+   - 駁回給上一層：要求職環安重新審核
+4. **管理員特殊權限** - 可在任何階段駁回到任意層級
+5. **重新提交機制** - 被駁回的申請可重新進入簽核流程
 
 ### 年度資格管理
 1. **新增資格** - 建立年度資格記錄
@@ -210,7 +227,15 @@ FaceMatch/
 
 ## 📝 版本歷史
 
-### v2.0.0 - 企業級功能 (最新)
+### v2.1.0 - 增強型簽核系統 (最新)
+- ✅ **增強型簽核駁回系統** - 支援選擇性駁回路由
+- ✅ **角色基礎駁回權限** - 職環安/經理/管理員不同駁回選項
+- ✅ **企業級操作日誌** - 完整審計追蹤和分類搜尋
+- ✅ **會話管理系統** - 安全的用戶認證和權限控制
+- ✅ **重新提交機制** - 被駁回申請可重新進入簽核流程
+- ✅ **權限修復** - 統一使用英文角色常數，修復認證問題
+
+### v2.0.0 - 企業級功能
 - ✅ AD (Active Directory) 網域驗證整合
 - ✅ 完整使用者管理系統 (CRUD + 權限)
 - ✅ 多層級簽核工作流程 (職環安 → 再生經理)
@@ -232,9 +257,12 @@ FaceMatch/
 
 ```bash
 # 執行特定功能測試
-node tests/test-user-management.js          # 使用者管理測試
-node tests/test-qualification-actions.js    # 年度資格操作測試  
-node tests/test-enhanced-features.js        # 企業功能測試
+node tests/test-complete-crud.js            # 完整 CRUD 功能測試
+node tests/test-enhanced-approval.js        # 增強型簽核系統測試
+node tests/test-role-based-reject.js        # 角色駁回權限測試
+node tests/test-logging-system.js           # 企業級日誌系統測試
+node test-manager-reject-options.js         # 經理駁回選項測試
+node test-auth-fix.js                       # 認證系統測試
 ```
 
 ## 🚀 未來開發

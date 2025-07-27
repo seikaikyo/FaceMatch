@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
@@ -5,7 +6,7 @@ const { Client } = require('ldapts');
 const bcrypt = require('bcrypt');
 
 const app = express();
-const port = 5001;
+const port = process.env.PORT || 5001;
 
 // 中間件
 app.use(cors({
@@ -16,7 +17,110 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// AD 配置 (可以通過環境變數配置)
+// 會話檢查中間件 - 在所有路由之前
+app.use(checkSession);
+
+// 日誌中間件 - 記錄請求資訊
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+  req.clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
+  req.sessionId = req.headers['session-id'] || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  next();
+});
+
+// 日誌記錄幫助函數
+async function logOperation(req, operation, module, targetType, targetId, targetName, description, details = null, status = 'SUCCESS', errorMessage = null) {
+  try {
+    const executionTime = Date.now() - req.startTime;
+    await OperationLog.create({
+      userId: req.user?.id || null,
+      username: req.user?.username || 'anonymous',
+      userRole: req.user?.role || 'unknown',
+      operation,
+      module,
+      targetType,
+      targetId: targetId?.toString(),
+      targetName,
+      description,
+      details: details ? JSON.stringify(details) : null,
+      ipAddress: req.clientIp,
+      userAgent: req.headers['user-agent'] || '',
+      status,
+      errorMessage,
+      executionTime,
+      sessionId: req.sessionId
+    });
+  } catch (error) {
+    console.error('記錄操作日誌失敗:', error);
+  }
+}
+
+// 認證中間件
+function requireAuth(req, res, next) {
+  // 模擬簡單的認證檢查 - 在實際應用中會檢查JWT token等
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: '需要登入' });
+  }
+  next();
+}
+
+// 權限檢查中間件
+function requireRole(allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: '需要登入' });
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: '權限不足' });
+    }
+    
+    next();
+  };
+}
+
+// 會話存儲 (簡單實現，生產環境建議使用 Redis)
+const sessions = new Map();
+
+// 會話檢查中間件
+function checkSession(req, res, next) {
+  const sessionId = req.headers['session-id'] || req.headers['sessionid'];
+  
+  if (sessionId && sessions.has(sessionId)) {
+    req.user = sessions.get(sessionId);
+  }
+  
+  next();
+}
+
+// 日誌記錄包裝器
+function withLogging(operation, module, targetType) {
+  return (originalFunction) => {
+    return async (req, res, ...args) => {
+      const startTime = Date.now();
+      try {
+        const result = await originalFunction(req, res, ...args);
+        
+        // 如果是成功的回應且有資料
+        if (res.statusCode < 400) {
+          const targetId = req.params.id || result?.data?.id || 'unknown';
+          const targetName = result?.data?.name || result?.data?.title || result?.data?.displayName || result?.data?.username || 'unknown';
+          await logOperation(req, operation, module, targetType, targetId, targetName, 
+            `${operation} ${targetType} successfully`, result?.data, 'SUCCESS');
+        }
+        
+        return result;
+      } catch (error) {
+        const targetId = req.params.id || 'unknown';
+        await logOperation(req, operation, module, targetType, targetId, 'unknown', 
+          `${operation} ${targetType} failed`, { error: error.message }, 'ERROR', error.message);
+        throw error;
+      }
+    };
+  };
+}
+
+// AD 配置 (從環境變數讀取)
 const AD_CONFIG = {
   enabled: process.env.AD_ENABLED === 'true' || false,
   url: process.env.AD_URL || 'ldap://your-domain.com:389',
@@ -45,7 +149,10 @@ const WorkOrder = sequelize.define('WorkOrder', {
   title: { type: DataTypes.STRING, allowNull: false },
   contractorId: { type: DataTypes.INTEGER, allowNull: false },
   location: DataTypes.STRING,
-  status: { type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED', 'RETURNED'), defaultValue: 'PENDING' },
+  status: { 
+    type: DataTypes.ENUM('DRAFT', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'RETURNED_TO_APPLICANT', 'PENDING', 'RETURNED'), 
+    defaultValue: 'DRAFT' 
+  },
   submittedBy: DataTypes.STRING,
   currentApprover: DataTypes.STRING,
   approvalLevel: { type: DataTypes.INTEGER, defaultValue: 1 },
@@ -54,6 +161,7 @@ const WorkOrder = sequelize.define('WorkOrder', {
   approvedBy: DataTypes.STRING,
   rejectedAt: DataTypes.DATE,
   rejectedBy: DataTypes.STRING,
+  rejectionReason: DataTypes.TEXT,
   returnedAt: DataTypes.DATE,
   returnedBy: DataTypes.STRING,
   // 新增狀態變更相關欄位
@@ -102,7 +210,7 @@ const User = sequelize.define('User', {
   displayName: DataTypes.STRING,
   email: DataTypes.STRING,
   department: DataTypes.STRING,
-  role: { type: DataTypes.ENUM('管理員', '職環安', '再生經理', '一般使用者'), defaultValue: '一般使用者' },
+  role: { type: DataTypes.ENUM('ADMIN', 'EHS', 'MANAGER', 'CONTRACTOR'), defaultValue: 'CONTRACTOR' },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
   lastLogin: DataTypes.DATE,
   authType: { type: DataTypes.ENUM('LOCAL', 'AD'), defaultValue: 'LOCAL' },
@@ -119,6 +227,37 @@ const User = sequelize.define('User', {
   lastADSync: DataTypes.DATE, // 最後 AD 同步時間
   // 備註
   notes: DataTypes.TEXT
+});
+
+// 操作日誌模型
+const OperationLog = sequelize.define('OperationLog', {
+  userId: DataTypes.INTEGER,
+  username: { type: DataTypes.STRING, allowNull: false },
+  userRole: DataTypes.STRING,
+  operation: { type: DataTypes.STRING, allowNull: false }, // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, APPROVE, REJECT, RENEW, SUSPEND
+  module: { type: DataTypes.STRING, allowNull: false }, // contractors, workorders, qualifications, users, facematch, auth
+  targetType: DataTypes.STRING, // 操作目標類型
+  targetId: DataTypes.STRING, // 操作目標ID
+  targetName: DataTypes.STRING, // 操作目標名稱
+  description: { type: DataTypes.TEXT, allowNull: false }, // 操作描述
+  details: DataTypes.TEXT, // JSON 格式的詳細資訊
+  ipAddress: DataTypes.STRING,
+  userAgent: DataTypes.STRING,
+  status: { type: DataTypes.ENUM('SUCCESS', 'FAILED', 'ERROR'), defaultValue: 'SUCCESS' },
+  errorMessage: DataTypes.TEXT,
+  executionTime: DataTypes.INTEGER, // 執行時間(毫秒)
+  sessionId: DataTypes.STRING
+}, {
+  indexes: [
+    { fields: ['userId'] },
+    { fields: ['username'] },
+    { fields: ['operation'] },
+    { fields: ['module'] },
+    { fields: ['status'] },
+    { fields: ['createdAt'] },
+    { fields: ['module', 'operation'] },
+    { fields: ['userId', 'createdAt'] }
+  ]
 });
 
 // 關聯定義
@@ -211,21 +350,21 @@ async function initializeDatabase() {
 
     console.log('🌱 初始化測試數據...');
 
-    // 創建測試使用者 (包含密碼雜湊)
-    const saltRounds = 10;
+    // 創建測試使用者 (從環境變數讀取密碼)
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
     await User.bulkCreate([
       { 
         username: 'admin', 
         displayName: '系統管理員', 
-        email: 'admin@company.com',
+        email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@company.com',
         department: 'IT部門',
         jobTitle: '系統管理員',
         employeeId: 'EMP001',
-        role: '管理員', 
+        role: 'ADMIN', 
         authType: 'LOCAL',
         canApprove: true,
         approvalLevel: 999, // 管理員可以簽核所有層級
-        passwordHash: await bcrypt.hash('admin123', saltRounds),
+        passwordHash: await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'admin123', saltRounds),
         phoneNumber: '02-1234-5678'
       },
       { 
@@ -235,11 +374,11 @@ async function initializeDatabase() {
         department: '職業安全衛生室',
         jobTitle: '職環安專員',
         employeeId: 'EMP002',
-        role: '職環安', 
+        role: 'EHS', 
         authType: 'LOCAL',
         canApprove: true,
         approvalLevel: 1, // 第一層簽核
-        passwordHash: await bcrypt.hash('safety123', saltRounds),
+        passwordHash: await bcrypt.hash(process.env.DEFAULT_SAFETY_PASSWORD || 'safety123', saltRounds),
         phoneNumber: '02-1234-5679'
       },
       { 
@@ -249,11 +388,11 @@ async function initializeDatabase() {
         department: '再生事業部',
         jobTitle: '部門經理',
         employeeId: 'EMP003',
-        role: '再生經理', 
+        role: 'MANAGER', 
         authType: 'LOCAL',
         canApprove: true,
         approvalLevel: 2, // 第二層簽核
-        passwordHash: await bcrypt.hash('manager123', saltRounds),
+        passwordHash: await bcrypt.hash(process.env.DEFAULT_MANAGER_PASSWORD || 'manager123', saltRounds),
         phoneNumber: '02-1234-5680'
       },
       {
@@ -263,10 +402,10 @@ async function initializeDatabase() {
         department: '營運部門',
         jobTitle: '業務專員',
         employeeId: 'EMP004',
-        role: '一般使用者',
+        role: 'CONTRACTOR',
         authType: 'LOCAL',
         canApprove: false,
-        passwordHash: await bcrypt.hash('user123', saltRounds),
+        passwordHash: await bcrypt.hash(process.env.DEFAULT_USER_PASSWORD || 'user123', saltRounds),
         phoneNumber: '02-1234-5681'
       }
     ]);
@@ -404,12 +543,28 @@ app.post('/api/login', async (req, res) => {
     }
 
     if (userInfo) {
+      // 創建會話
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessions.set(sessionId, userInfo);
+      
+      // 記錄登入成功日誌
+      req.user = userInfo; // 設置用戶資訊以便日誌記錄
+      await logOperation(req, 'LOGIN', 'auth', 'user', userInfo.id, userInfo.username, 
+        `使用者 ${userInfo.username} (${userInfo.role}) 登入成功`, 
+        { authType: useAD ? 'AD' : 'LOCAL', loginTime: new Date() });
+      
       res.json({
         success: true,
         token: `token-${userInfo.username}-${Date.now()}`,
+        sessionId: sessionId,
         user: userInfo
       });
     } else {
+      // 記錄登入失敗日誌
+      await logOperation(req, 'LOGIN', 'auth', 'user', null, username, 
+        `使用者 ${username} 登入失敗`, 
+        { authType: useAD ? 'AD' : 'LOCAL', attemptTime: new Date() }, 'FAILED', '帳號或密碼錯誤');
+      
       res.status(401).json({ success: false, message: '登入失敗：帳號或密碼錯誤' });
     }
   } catch (error) {
@@ -699,6 +854,249 @@ app.get('/api/work-orders/pending-approval', async (req, res) => {
   }
 });
 
+// 增強型簽核系統 - 提交申請
+app.post('/api/approvals/:workOrderId/submit', requireAuth, requireRole(['CONTRACTOR', 'ADMIN']), async (req, res) => {
+  try {
+    const workOrder = await WorkOrder.findByPk(req.params.workOrderId);
+    if (!workOrder) {
+      return res.status(404).json({ success: false, message: '施工單不存在' });
+    }
+
+    if (workOrder.status !== 'DRAFT') {
+      return res.status(400).json({ success: false, message: '只有草稿狀態的施工單可以提交' });
+    }
+
+    // 開始簽核流程
+    workOrder.status = 'PENDING_EHS';
+    workOrder.approvalLevel = 1;
+    workOrder.currentApprover = '職環安';
+    await workOrder.save();
+
+    await logOperation(req, 'SUBMIT', 'approval', 'workorder', workOrder.id, workOrder.title, '提交施工單申請');
+
+    res.json({ success: true, message: '提交申請成功', data: workOrder });
+  } catch (error) {
+    await logOperation(req, 'SUBMIT', 'approval', 'workorder', req.params.workOrderId, 'unknown', '提交申請失敗', { error: error.message }, 'ERROR', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 職環安簽核
+app.post('/api/approvals/:workOrderId/ehs', requireAuth, requireRole(['EHS', 'ADMIN']), async (req, res) => {
+  try {
+    const { action, comments, rejectTo } = req.body;
+    const workOrder = await WorkOrder.findByPk(req.params.workOrderId);
+    
+    if (!workOrder) {
+      return res.status(404).json({ success: false, message: '施工單不存在' });
+    }
+
+    if (workOrder.status !== 'PENDING_EHS') {
+      return res.status(400).json({ success: false, message: '此施工單目前不在職環安簽核階段' });
+    }
+
+    // 記錄簽核歷史
+    await ApprovalHistory.create({
+      workOrderId: workOrder.id,
+      level: 1,
+      approver: '職環安',
+      action,
+      comment: comments || '',
+      timestamp: new Date(),
+      type: 'EHS_APPROVAL'
+    });
+
+    if (action === 'APPROVED') {
+      // 進入經理審核階段
+      workOrder.status = 'PENDING_MANAGER';
+      workOrder.approvalLevel = 2;
+      workOrder.currentApprover = '再生經理';
+      
+      await logOperation(req, 'APPROVE', 'approval', 'workorder', workOrder.id, workOrder.title, '職環安核准', { comments });
+    } else {
+      // 職環安駁回只能退回給申請人
+      workOrder.status = 'RETURNED_TO_APPLICANT';
+      workOrder.currentApprover = null;
+      workOrder.rejectedAt = new Date();
+      workOrder.rejectedBy = '職環安';
+      workOrder.rejectionReason = comments || '職環安駁回申請';
+      
+      await logOperation(req, 'REJECT', 'approval', 'workorder', workOrder.id, workOrder.title, '職環安駁回給申請人', { comments });
+    }
+
+    await workOrder.save();
+    res.json({ success: true, message: `職環安${action === 'APPROVED' ? '核准' : '駁回'}成功`, data: workOrder });
+  } catch (error) {
+    await logOperation(req, 'EHS_APPROVAL', 'approval', 'workorder', req.params.workOrderId, 'unknown', '職環安簽核失敗', { error: error.message }, 'ERROR', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 經理簽核
+app.post('/api/approvals/:workOrderId/manager', requireAuth, requireRole(['MANAGER', 'ADMIN']), async (req, res) => {
+  try {
+    const { action, comments, rejectTo } = req.body;
+    const workOrder = await WorkOrder.findByPk(req.params.workOrderId);
+    
+    if (!workOrder) {
+      return res.status(404).json({ success: false, message: '施工單不存在' });
+    }
+
+    if (workOrder.status !== 'PENDING_MANAGER') {
+      return res.status(400).json({ success: false, message: '此施工單目前不在經理簽核階段' });
+    }
+
+    // 記錄簽核歷史
+    await ApprovalHistory.create({
+      workOrderId: workOrder.id,
+      level: 2,
+      approver: '再生經理',
+      action,
+      comment: comments || '',
+      timestamp: new Date(),
+      type: 'MANAGER_APPROVAL'
+    });
+
+    if (action === 'APPROVED') {
+      // 最終核准
+      workOrder.status = 'APPROVED';
+      workOrder.approvedAt = new Date();
+      workOrder.approvedBy = '再生經理';
+      workOrder.currentApprover = null;
+      
+      await logOperation(req, 'APPROVE', 'approval', 'workorder', workOrder.id, workOrder.title, '經理最終核准', { comments });
+    } else {
+      // 經理可選擇駁回對象
+      const targetTo = rejectTo || 'APPLICANT';
+      
+      if (targetTo === 'PREVIOUS_LEVEL') {
+        // 駁回給職環安重新審核
+        workOrder.status = 'PENDING_EHS';
+        workOrder.approvalLevel = 1;
+        workOrder.currentApprover = '職環安';
+        workOrder.rejectionReason = comments || '經理要求職環安重新審核';
+        
+        await logOperation(req, 'REJECT', 'approval', 'workorder', workOrder.id, workOrder.title, '經理駁回給職環安', { comments, rejectTo });
+      } else {
+        // 駁回給申請人
+        workOrder.status = 'RETURNED_TO_APPLICANT';
+        workOrder.currentApprover = null;
+        workOrder.rejectedAt = new Date();
+        workOrder.rejectedBy = '再生經理';
+        workOrder.rejectionReason = comments || '經理駁回申請';
+        
+        await logOperation(req, 'REJECT', 'approval', 'workorder', workOrder.id, workOrder.title, '經理駁回給申請人', { comments, rejectTo });
+      }
+    }
+
+    await workOrder.save();
+    res.json({ success: true, message: `經理${action === 'APPROVED' ? '核准' : '駁回'}成功`, data: workOrder });
+  } catch (error) {
+    await logOperation(req, 'MANAGER_APPROVAL', 'approval', 'workorder', req.params.workOrderId, 'unknown', '經理簽核失敗', { error: error.message }, 'ERROR', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 管理員特殊駁回
+app.post('/api/approvals/:workOrderId/admin-reject', requireAuth, requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const { rejectTo, comments } = req.body;
+    const workOrder = await WorkOrder.findByPk(req.params.workOrderId);
+    
+    if (!workOrder) {
+      return res.status(404).json({ success: false, message: '施工單不存在' });
+    }
+
+    // 記錄管理員操作歷史
+    await ApprovalHistory.create({
+      workOrderId: workOrder.id,
+      level: workOrder.approvalLevel || 0,
+      approver: '管理員',
+      action: 'REJECTED',
+      comment: `管理員駁回: ${comments || ''}`,
+      timestamp: new Date(),
+      type: 'ADMIN_OVERRIDE'
+    });
+
+    workOrder.rejectedAt = new Date();
+    workOrder.rejectedBy = '管理員';
+    workOrder.rejectionReason = `管理員駁回: ${comments || ''}`;
+
+    switch (rejectTo) {
+      case 'EHS':
+        workOrder.status = 'PENDING_EHS';
+        workOrder.approvalLevel = 1;
+        workOrder.currentApprover = '職環安';
+        break;
+      case 'MANAGER':
+        workOrder.status = 'PENDING_MANAGER';
+        workOrder.approvalLevel = 2;
+        workOrder.currentApprover = '再生經理';
+        break;
+      default: // APPLICANT
+        workOrder.status = 'RETURNED_TO_APPLICANT';
+        workOrder.currentApprover = null;
+        break;
+    }
+
+    await workOrder.save();
+    await logOperation(req, 'ADMIN_REJECT', 'approval', 'workorder', workOrder.id, workOrder.title, `管理員駁回至${rejectTo}`, { comments, rejectTo });
+
+    res.json({ 
+      success: true, 
+      message: `管理員駁回成功，已退回給${rejectTo === 'APPLICANT' ? '申請人' : rejectTo === 'EHS' ? '職環安' : '再生經理'}`,
+      data: workOrder 
+    });
+  } catch (error) {
+    await logOperation(req, 'ADMIN_REJECT', 'approval', 'workorder', req.params.workOrderId, 'unknown', '管理員駁回失敗', { error: error.message }, 'ERROR', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 重新提交被駁回的申請
+app.post('/api/approvals/:workOrderId/resubmit', requireAuth, requireRole(['CONTRACTOR', 'ADMIN']), async (req, res) => {
+  try {
+    const workOrder = await WorkOrder.findByPk(req.params.workOrderId);
+    
+    if (!workOrder) {
+      return res.status(404).json({ success: false, message: '施工單不存在' });
+    }
+
+    if (workOrder.status !== 'RETURNED_TO_APPLICANT') {
+      return res.status(400).json({ success: false, message: '只有被駁回的施工單可以重新提交' });
+    }
+
+    // 重新開始簽核流程
+    workOrder.status = 'PENDING_EHS';
+    workOrder.approvalLevel = 1;
+    workOrder.currentApprover = '職環安';
+    workOrder.rejectionReason = null;
+    workOrder.rejectedAt = null;
+    workOrder.rejectedBy = null;
+
+    await workOrder.save();
+    await logOperation(req, 'RESUBMIT', 'approval', 'workorder', workOrder.id, workOrder.title, '重新提交被駁回的申請');
+
+    res.json({ success: true, message: '重新提交申請成功', data: workOrder });
+  } catch (error) {
+    await logOperation(req, 'RESUBMIT', 'approval', 'workorder', req.params.workOrderId, 'unknown', '重新提交失敗', { error: error.message }, 'ERROR', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 查詢簽核歷史
+app.get('/api/approvals/:workOrderId/history', async (req, res) => {
+  try {
+    const history = await ApprovalHistory.findAll({ 
+      where: { workOrderId: req.params.workOrderId },
+      order: [['timestamp', 'ASC']]
+    });
+    res.json({ success: true, data: history });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // 年度資格 CRUD (保持原有邏輯)
 app.get('/api/qualifications', async (req, res) => {
   try {
@@ -905,7 +1303,7 @@ app.post('/api/users', async (req, res) => {
     
     // 如果是本地帳號且有提供密碼，進行雜湊
     if (userData.authType === 'LOCAL' && userData.password) {
-      const saltRounds = 10;
+      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
       userData.passwordHash = await bcrypt.hash(userData.password, saltRounds);
       delete userData.password; // 移除明文密碼
     }
@@ -931,7 +1329,7 @@ app.put('/api/users/:id', async (req, res) => {
     
     // 如果有提供新密碼，進行雜湊
     if (updateData.password) {
-      const saltRounds = 10;
+      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
       updateData.passwordHash = await bcrypt.hash(updateData.password, saltRounds);
       delete updateData.password;
     }
@@ -979,7 +1377,7 @@ app.post('/api/users/:id/reset-password', async (req, res) => {
       return res.status(400).json({ success: false, message: '只能重設本地帳號密碼' });
     }
     
-    const saltRounds = 10;
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
     
     await user.update({ passwordHash });
@@ -1035,6 +1433,193 @@ app.get('/api/approvers', async (req, res) => {
     });
     res.json({ success: true, data: approvers });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 操作日誌 API
+app.get('/api/logs', async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 50, 
+      module, 
+      operation, 
+      username, 
+      status, 
+      startDate, 
+      endDate,
+      search 
+    } = req.query;
+
+    const whereClause = {};
+    
+    // 過濾條件
+    if (module) whereClause.module = module;
+    if (operation) whereClause.operation = operation;
+    if (username) whereClause.username = { [sequelize.Op.like]: `%${username}%` };
+    if (status) whereClause.status = status;
+    
+    // 日期範圍過濾
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      if (startDate) whereClause.createdAt[sequelize.Op.gte] = new Date(startDate);
+      if (endDate) whereClause.createdAt[sequelize.Op.lte] = new Date(endDate);
+    }
+    
+    // 通用搜尋
+    if (search) {
+      whereClause[sequelize.Op.or] = [
+        { description: { [sequelize.Op.like]: `%${search}%` } },
+        { targetName: { [sequelize.Op.like]: `%${search}%` } },
+        { username: { [sequelize.Op.like]: `%${search}%` } }
+      ];
+    }
+
+    const offset = (page - 1) * limit;
+    
+    const { count, rows } = await OperationLog.findAndCountAll({
+      where: whereClause,
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // 統計資訊
+    const stats = await OperationLog.findAll({
+      attributes: [
+        'module',
+        'operation',
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: whereClause,
+      group: ['module', 'operation', 'status'],
+      raw: true
+    });
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      },
+      statistics: stats
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 操作日誌統計 API
+app.get('/api/logs/stats', async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+
+    // 按模組統計
+    const moduleStats = await OperationLog.findAll({
+      attributes: [
+        'module',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'total'],
+        [sequelize.fn('COUNT', sequelize.literal("CASE WHEN status = 'SUCCESS' THEN 1 END")), 'success'],
+        [sequelize.fn('COUNT', sequelize.literal("CASE WHEN status = 'ERROR' THEN 1 END")), 'error']
+      ],
+      where: {
+        createdAt: { [sequelize.Op.gte]: startDate }
+      },
+      group: ['module'],
+      raw: true
+    });
+
+    // 按操作統計
+    const operationStats = await OperationLog.findAll({
+      attributes: [
+        'operation',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: {
+        createdAt: { [sequelize.Op.gte]: startDate }
+      },
+      group: ['operation'],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+      limit: 10,
+      raw: true
+    });
+
+    // 按使用者統計
+    const userStats = await OperationLog.findAll({
+      attributes: [
+        'username',
+        'userRole',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: {
+        createdAt: { [sequelize.Op.gte]: startDate }
+      },
+      group: ['username', 'userRole'],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+      limit: 10,
+      raw: true
+    });
+
+    // 每日趨勢
+    const dailyTrend = await OperationLog.findAll({
+      attributes: [
+        [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: {
+        createdAt: { [sequelize.Op.gte]: startDate }
+      },
+      group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
+      order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']],
+      raw: true
+    });
+
+    res.json({
+      success: true,
+      data: {
+        moduleStats,
+        operationStats,
+        userStats,
+        dailyTrend,
+        period: `${days} 天`
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 清理舊日誌 API (管理員專用)
+app.delete('/api/logs/cleanup', async (req, res) => {
+  try {
+    const { days = 90 } = req.body;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+
+    const deletedCount = await OperationLog.destroy({
+      where: {
+        createdAt: { [sequelize.Op.lt]: cutoffDate }
+      }
+    });
+
+    await logOperation(req, 'DELETE', 'logs', 'cleanup', null, 'old_logs', 
+      `清理 ${days} 天前的日誌，共刪除 ${deletedCount} 條記錄`, { deletedCount, days });
+
+    res.json({
+      success: true,
+      message: `成功清理 ${deletedCount} 條舊日誌`,
+      deletedCount
+    });
+  } catch (error) {
+    await logOperation(req, 'DELETE', 'logs', 'cleanup', null, 'old_logs', 
+      '清理舊日誌失敗', { error: error.message }, 'ERROR', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

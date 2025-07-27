@@ -68,7 +68,8 @@ export class ApprovalService {
     workOrderId: string, 
     approverId: string, 
     action: 'APPROVED' | 'REJECTED', 
-    comments?: string
+    comments?: string,
+    rejectTo?: 'APPLICANT' | 'PREVIOUS_LEVEL'
   ): Promise<IWorkOrder> {
     const workOrder = await WorkOrder.findById(workOrderId);
     if (!workOrder) {
@@ -105,15 +106,18 @@ export class ApprovalService {
         comments
       });
     } else {
-      // 拒絕申請
-      workOrder.status = 'REJECTED';
-      workOrder.currentApprovalLevel = 'COMPLETED';
-      workOrder.rejectionReason = comments || '職環安拒絕申請';
+      // 駁回申請 - 職環安只能駁回給申請人
+      workOrder.status = 'RETURNED_TO_APPLICANT';
+      workOrder.currentApprovalLevel = 'RETURNED';
+      workOrder.rejectionReason = comments || '職環安駁回申請';
+      workOrder.returnedFrom = 'EHS';
+      workOrder.returnedAt = new Date();
 
-      logger.warn(`職環安拒絕施工單: ${workOrder.orderNumber}`, {
+      logger.warn(`職環安駁回施工單: ${workOrder.orderNumber}`, {
         workOrderId: workOrder._id,
         approverId,
-        reason: comments
+        reason: comments,
+        returnedTo: 'APPLICANT'
       });
     }
 
@@ -128,7 +132,8 @@ export class ApprovalService {
     workOrderId: string, 
     approverId: string, 
     action: 'APPROVED' | 'REJECTED', 
-    comments?: string
+    comments?: string,
+    rejectTo?: 'APPLICANT' | 'PREVIOUS_LEVEL'
   ): Promise<IWorkOrder> {
     const workOrder = await WorkOrder.findById(workOrderId);
     if (!workOrder) {
@@ -176,16 +181,48 @@ export class ApprovalService {
         // 同步失敗不影響審核流程，只記錄錯誤
       }
     } else {
-      // 拒絕申請
-      workOrder.status = 'REJECTED';
-      workOrder.currentApprovalLevel = 'COMPLETED';
-      workOrder.rejectionReason = comments || '經理拒絕申請';
+      // 駁回申請 - 再生經理可選擇駁回給申請人或上一層職環安
+      const rejectTarget = rejectTo || 'APPLICANT';
+      
+      if (rejectTarget === 'PREVIOUS_LEVEL') {
+        // 駁回給上一層職環安重新審核
+        workOrder.status = 'PENDING_EHS';
+        workOrder.currentApprovalLevel = 'EHS';
+        workOrder.rejectionReason = comments || '經理要求職環安重新審核';
+        workOrder.returnedFrom = 'MANAGER';
+        workOrder.returnedAt = new Date();
+        
+        // 重置職環安簽核記錄
+        const ehsApproval = workOrder.approvalHistory.find(h => h.level === 'EHS');
+        if (ehsApproval) {
+          ehsApproval.action = 'PENDING';
+          ehsApproval.approverId = undefined;
+          ehsApproval.approverName = undefined;
+          ehsApproval.comments = undefined;
+          ehsApproval.actionAt = undefined;
+        }
 
-      logger.warn(`經理拒絕施工單: ${workOrder.orderNumber}`, {
-        workOrderId: workOrder._id,
-        approverId,
-        reason: comments
-      });
+        logger.warn(`經理駁回施工單給職環安: ${workOrder.orderNumber}`, {
+          workOrderId: workOrder._id,
+          approverId,
+          reason: comments,
+          returnedTo: 'EHS'
+        });
+      } else {
+        // 駁回給申請人
+        workOrder.status = 'RETURNED_TO_APPLICANT';
+        workOrder.currentApprovalLevel = 'RETURNED';
+        workOrder.rejectionReason = comments || '經理駁回申請';
+        workOrder.returnedFrom = 'MANAGER';
+        workOrder.returnedAt = new Date();
+
+        logger.warn(`經理駁回施工單給申請人: ${workOrder.orderNumber}`, {
+          workOrderId: workOrder._id,
+          approverId,
+          reason: comments,
+          returnedTo: 'APPLICANT'
+        });
+      }
     }
 
     await workOrder.save();
@@ -249,6 +286,131 @@ export class ApprovalService {
     }
 
     return false;
+  }
+
+  /**
+   * 管理員特殊駁回權限 (管理員可以在任何階段駁回)
+   */
+  static async adminReject(
+    workOrderId: string, 
+    adminId: string, 
+    rejectTo: 'APPLICANT' | 'EHS' | 'MANAGER',
+    comments?: string
+  ): Promise<IWorkOrder> {
+    const workOrder = await WorkOrder.findById(workOrderId);
+    if (!workOrder) {
+      throw new Error('施工單不存在');
+    }
+
+    const admin = await User.findById(adminId);
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new Error('只有管理員可以執行此操作');
+    }
+
+    // 添加管理員操作記錄
+    workOrder.approvalHistory.push({
+      level: 'MANAGER',
+      approverRole: '管理員',
+      approverId: adminId as any,
+      approverName: admin.name,
+      action: 'REJECTED',
+      comments: `管理員駁回: ${comments || ''}`,
+      actionAt: new Date(),
+      isRequired: false
+    });
+
+    workOrder.returnedFrom = 'ADMIN';
+    workOrder.returnedAt = new Date();
+    workOrder.rejectionReason = `管理員駁回: ${comments || ''}`;
+
+    switch (rejectTo) {
+      case 'EHS':
+        workOrder.status = 'PENDING_EHS';
+        workOrder.currentApprovalLevel = 'EHS';
+        // 重置職環安簽核記錄
+        const ehsApproval = workOrder.approvalHistory.find(h => h.level === 'EHS');
+        if (ehsApproval) {
+          ehsApproval.action = 'PENDING';
+          ehsApproval.approverId = undefined;
+          ehsApproval.approverName = undefined;
+          ehsApproval.comments = undefined;
+          ehsApproval.actionAt = undefined;
+        }
+        break;
+      case 'MANAGER':
+        workOrder.status = 'PENDING_MANAGER';
+        workOrder.currentApprovalLevel = 'MANAGER';
+        // 重置經理簽核記錄
+        const managerApproval = workOrder.approvalHistory.find(h => h.level === 'MANAGER');
+        if (managerApproval) {
+          managerApproval.action = 'PENDING';
+          managerApproval.approverId = undefined;
+          managerApproval.approverName = undefined;
+          managerApproval.comments = undefined;
+          managerApproval.actionAt = undefined;
+        }
+        break;
+      default: // APPLICANT
+        workOrder.status = 'RETURNED_TO_APPLICANT';
+        workOrder.currentApprovalLevel = 'RETURNED';
+        break;
+    }
+
+    await workOrder.save();
+
+    logger.warn(`管理員駁回施工單: ${workOrder.orderNumber}`, {
+      workOrderId: workOrder._id,
+      adminId,
+      reason: comments,
+      returnedTo: rejectTo
+    });
+
+    return workOrder;
+  }
+
+  /**
+   * 重新提交被駁回的申請
+   */
+  static async resubmitWorkOrder(workOrderId: string, applicantId: string): Promise<IWorkOrder> {
+    const workOrder = await WorkOrder.findById(workOrderId);
+    if (!workOrder) {
+      throw new Error('施工單不存在');
+    }
+
+    if (workOrder.status !== 'RETURNED_TO_APPLICANT') {
+      throw new Error('只有被駁回的施工單可以重新提交');
+    }
+
+    if (workOrder.applicantId.toString() !== applicantId) {
+      throw new Error('只有申請人可以重新提交施工單');
+    }
+
+    // 重新開始簽核流程
+    workOrder.status = 'PENDING_EHS';
+    workOrder.currentApprovalLevel = 'EHS';
+    workOrder.rejectionReason = undefined;
+    workOrder.returnedFrom = undefined;
+    workOrder.returnedAt = undefined;
+
+    // 重置所有簽核記錄
+    workOrder.approvalHistory.forEach(approval => {
+      if (approval.level === 'EHS' || approval.level === 'MANAGER') {
+        approval.action = 'PENDING';
+        approval.approverId = undefined;
+        approval.approverName = undefined;
+        approval.comments = undefined;
+        approval.actionAt = undefined;
+      }
+    });
+
+    await workOrder.save();
+
+    logger.info(`重新提交施工單: ${workOrder.orderNumber}`, {
+      workOrderId: workOrder._id,
+      applicantId
+    });
+
+    return workOrder;
   }
 
   /**

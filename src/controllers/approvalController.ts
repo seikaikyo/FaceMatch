@@ -24,12 +24,13 @@ export class ApprovalController {
 
   static async ehsApproval(req: Request, res: Response<ApiResponse>): Promise<void> {
     try {
-      const { action, comments } = req.body;
+      const { action, comments, rejectTo } = req.body;
       const workOrder = await ApprovalService.ehsApproval(
         req.params.workOrderId,
         req.user!._id,
         action,
-        comments
+        comments,
+        rejectTo
       );
 
       res.json({
@@ -48,12 +49,13 @@ export class ApprovalController {
 
   static async managerApproval(req: Request, res: Response<ApiResponse>): Promise<void> {
     try {
-      const { action, comments } = req.body;
+      const { action, comments, rejectTo } = req.body;
       const workOrder = await ApprovalService.managerApproval(
         req.params.workOrderId,
         req.user!._id,
         action,
-        comments
+        comments,
+        rejectTo
       );
 
       res.json({
@@ -197,6 +199,60 @@ export class ApprovalController {
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : '撤回申請失敗'
+      });
+    }
+  }
+
+  static async adminReject(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { rejectTo, comments } = req.body;
+      
+      if (!['APPLICANT', 'EHS', 'MANAGER'].includes(rejectTo)) {
+        res.status(400).json({
+          success: false,
+          message: '駁回對象必須是 APPLICANT、EHS 或 MANAGER'
+        });
+        return;
+      }
+
+      const workOrder = await ApprovalService.adminReject(
+        req.params.workOrderId,
+        req.user!._id,
+        rejectTo,
+        comments
+      );
+
+      res.json({
+        success: true,
+        message: `管理員駁回成功，已退回給${rejectTo === 'APPLICANT' ? '申請人' : rejectTo === 'EHS' ? '職環安' : '再生經理'}`,
+        data: workOrder
+      });
+    } catch (error) {
+      logger.error('管理員駁回失敗:', error);
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : '管理員駁回失敗'
+      });
+    }
+  }
+
+  static async resubmitWorkOrder(req: Request, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const workOrder = await ApprovalService.resubmitWorkOrder(
+        req.params.workOrderId,
+        req.user!._id
+      );
+
+      res.json({
+        success: true,
+        message: '重新提交申請成功',
+        data: workOrder
+      });
+    } catch (error) {
+      logger.error('重新提交申請失敗:', error);
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : '重新提交申請失敗'
       });
     }
   }

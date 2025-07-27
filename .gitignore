@@ -47,6 +47,11 @@ Thumbs.db
 # Application Data Files
 # ================================================================
 
+# SQLite Database Files
+*.sqlite
+*.sqlite3
+*.db
+
 # User data (keep structure but ignore contents)
 data/contractors.json
 data/work_orders.json
@@ -55,6 +60,29 @@ data/qualifications.json
 # Keep data directory structure
 !data/
 !data/.gitkeep
+
+# ================================================================
+# Security and Configuration Files
+# ================================================================
+
+# Environment files containing secrets
+.env
+.env.local
+.env.*.local
+
+# Configuration files with sensitive data
+config/secrets.json
+config/local.json
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.p12
+
+# Authentication and session files
+sessions/
+auth-cache/
 
 # ================================================================
 # Development and Build Files

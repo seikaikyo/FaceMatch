@@ -64,6 +64,24 @@ router.post('/:workOrderId/withdraw',
   ApprovalController.withdrawApplication
 );
 
+// 管理員特殊駁回權限 - 僅 ADMIN 可以操作
+router.post('/:workOrderId/admin-reject', 
+  requireRole(['ADMIN']),
+  validateParams(Joi.object({ workOrderId: mongoIdSchema })),
+  validateBody(Joi.object({
+    rejectTo: Joi.string().valid('APPLICANT', 'EHS', 'MANAGER').required(),
+    comments: Joi.string().optional().allow('')
+  })),
+  ApprovalController.adminReject
+);
+
+// 重新提交被駁回的申請 - 承攬商用戶可以重新提交
+router.post('/:workOrderId/resubmit', 
+  requireRole(['CONTRACTOR', 'ADMIN']),
+  validateParams(Joi.object({ workOrderId: mongoIdSchema })),
+  ApprovalController.resubmitWorkOrder
+);
+
 // 檢查簽核權限
 router.get('/:workOrderId/can-approve', 
   validateParams(Joi.object({ workOrderId: mongoIdSchema })),

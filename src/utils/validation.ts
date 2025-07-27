@@ -134,11 +134,12 @@ export const addScheduleSchema = Joi.object({
 // 簽核相關
 export const approvalActionSchema = Joi.object({
   action: Joi.string().valid('APPROVED', 'REJECTED').required(),
-  comments: Joi.string().max(1000).optional()
+  comments: Joi.string().max(1000).optional(),
+  rejectTo: Joi.string().valid('APPLICANT', 'PREVIOUS_LEVEL').optional()
 });
 
 export const workOrderQuerySchema = paginationSchema.keys({
-  status: Joi.string().valid('DRAFT', 'SUBMITTED', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED').optional(),
+  status: Joi.string().valid('DRAFT', 'SUBMITTED', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'RETURNED_TO_APPLICANT', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED').optional(),
   contractorId: mongoIdSchema.optional(),
   applicantId: mongoIdSchema.optional()
 });

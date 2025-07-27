@@ -83,13 +83,15 @@ export interface IWorkOrder extends IBaseDocument {
   applicantName: string;
   appliedAt: Date;
   
-  status: 'DRAFT' | 'SUBMITTED' | 'PENDING_EHS' | 'PENDING_MANAGER' | 'APPROVED' | 'REJECTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  currentApprovalLevel: 'APPLICANT' | 'EHS' | 'MANAGER' | 'COMPLETED';
+  status: 'DRAFT' | 'SUBMITTED' | 'PENDING_EHS' | 'PENDING_MANAGER' | 'APPROVED' | 'REJECTED' | 'RETURNED_TO_APPLICANT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  currentApprovalLevel: 'APPLICANT' | 'EHS' | 'MANAGER' | 'COMPLETED' | 'RETURNED';
   
   approvalHistory: IApprovalRecord[];
   finalApprovedBy?: ObjectId;
   finalApprovedAt?: Date;
   rejectionReason?: string;
+  returnedFrom?: 'EHS' | 'MANAGER' | 'ADMIN';
+  returnedAt?: Date;
   
   assignments: IWorkOrderAssignment[];
   schedules: IWorkOrderSchedule[];

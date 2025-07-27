@@ -182,13 +182,13 @@ const workOrderSchema = new Schema<IWorkOrder>({
   status: {
     type: String,
     required: true,
-    enum: ['DRAFT', 'SUBMITTED', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+    enum: ['DRAFT', 'SUBMITTED', 'PENDING_EHS', 'PENDING_MANAGER', 'APPROVED', 'REJECTED', 'RETURNED_TO_APPLICANT', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
     default: 'DRAFT'
   },
   currentApprovalLevel: {
     type: String,
     required: true,
-    enum: ['APPLICANT', 'EHS', 'MANAGER', 'COMPLETED'],
+    enum: ['APPLICANT', 'EHS', 'MANAGER', 'COMPLETED', 'RETURNED'],
     default: 'APPLICANT'
   },
   
@@ -204,6 +204,14 @@ const workOrderSchema = new Schema<IWorkOrder>({
     type: String,
     trim: true,
     maxlength: 1000
+  },
+  returnedFrom: {
+    type: String,
+    enum: ['EHS', 'MANAGER', 'ADMIN'],
+    trim: true
+  },
+  returnedAt: {
+    type: Date
   },
   
   assignments: [workOrderAssignmentSchema],

@@ -165,6 +165,7 @@
         .status-failed { background: #f8d7da; color: #721c24; }
         .status-rejected { background: #f8d7da; color: #721c24; }
         .status-returned { background: #fff3cd; color: #856404; }
+        .status-returned-to-applicant { background: #fff3cd; color: #856404; }
 
         .approval-section {
             background: #f8f9fa;
@@ -312,6 +313,7 @@
                 <button class="tab-btn" data-tab="users">使用者管理</button>
                 <button class="tab-btn" data-tab="qualifications">年度資格管理</button>
                 <button class="tab-btn" data-tab="facematch">FaceMatch 整合</button>
+                <button class="tab-btn" data-tab="logs">操作日誌</button>
             </div>
             
             <!-- 承攬商管理 -->
@@ -604,10 +606,41 @@
                             <label>意見</label>
                             <textarea id="approvalComment" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="請輸入簽核意見"></textarea>
                         </div>
+                        
+                        <!-- 駁回選項 (僅在駁回時顯示) -->
+                        <div id="rejectOptions" class="form-group" style="display: none;">
+                            <label>駁回對象</label>
+                            <select id="rejectTo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="APPLICANT">駁回給申請人</option>
+                                <option value="PREVIOUS_LEVEL">駁回給上一層簽核者</option>
+                            </select>
+                            <small id="rejectHelpText" style="color: #666; margin-top: 5px; display: block;">
+                                • 駁回給申請人：申請人可修正後重新提交<br>
+                                • 駁回給上一層：要求上一層重新審核
+                            </small>
+                        </div>
+
+                        <!-- 管理員特殊駁回選項 -->
+                        <div id="adminRejectOptions" class="form-group" style="display: none;">
+                            <label>管理員駁回至</label>
+                            <select id="adminRejectTo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="APPLICANT">駁回給申請人</option>
+                                <option value="EHS">駁回給職環安</option>
+                                <option value="MANAGER">駁回給再生經理</option>
+                            </select>
+                        </div>
+                        
                         <div class="approval-actions">
                             <button class="btn btn-success" onclick="performApproval('APPROVED')">核准</button>
-                            <button class="btn btn-danger" onclick="performApproval('REJECTED')">駁回</button>
-                            <button class="btn" style="background: #ffc107; color: #212529;" onclick="performApproval('RETURNED')">退回修正</button>
+                            <button class="btn btn-danger" onclick="showRejectOptions()" id="rejectBtn">駁回</button>
+                            <button class="btn btn-warning" onclick="performApproval('REJECTED')" id="confirmRejectBtn" style="display: none;">確認駁回</button>
+                            <button class="btn btn-secondary" onclick="hideRejectOptions()" id="cancelRejectBtn" style="display: none;">取消</button>
+                            
+                            <!-- 管理員特殊功能 -->
+                            <div id="adminActions" style="display: none; margin-left: 10px;">
+                                <button class="btn" style="background: #dc3545; color: white;" onclick="showAdminRejectOptions()">管理員駁回</button>
+                                <button class="btn" style="background: #dc3545; color: white;" onclick="performAdminReject()" id="confirmAdminRejectBtn" style="display: none;">確認管理員駁回</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -721,6 +754,138 @@
                             <tr><td colspan="5">載入中...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 操作日誌 -->
+            <div id="logs" class="tab-content hidden">
+                <div class="flex">
+                    <h2>操作日誌</h2>
+                    <div>
+                        <button class="btn btn-primary" onclick="loadLogs()">重新整理</button>
+                        <button class="btn" onclick="showLogFilters()" style="background: #6c757d; color: white;">過濾</button>
+                        <button class="btn" onclick="showLogStats()" style="background: #17a2b8; color: white;">統計</button>
+                    </div>
+                </div>
+                
+                <!-- 過濾器 -->
+                <div id="logFilters" class="card hidden">
+                    <h3>日誌過濾</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>模組</label>
+                            <select id="filterModule">
+                                <option value="">全部模組</option>
+                                <option value="auth">認證系統</option>
+                                <option value="contractors">承攬商管理</option>
+                                <option value="workorders">施工單管理</option>
+                                <option value="qualifications">年度資格管理</option>
+                                <option value="users">使用者管理</option>
+                                <option value="facematch">FaceMatch整合</option>
+                                <option value="logs">日誌管理</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>操作類型</label>
+                            <select id="filterOperation">
+                                <option value="">全部操作</option>
+                                <option value="LOGIN">登入</option>
+                                <option value="LOGOUT">登出</option>
+                                <option value="CREATE">新增</option>
+                                <option value="UPDATE">更新</option>
+                                <option value="DELETE">刪除</option>
+                                <option value="APPROVE">核准</option>
+                                <option value="REJECT">駁回</option>
+                                <option value="RENEW">續約</option>
+                                <option value="SUSPEND">停用</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>使用者</label>
+                            <input type="text" id="filterUsername" placeholder="輸入使用者名稱" />
+                        </div>
+                        <div class="form-group">
+                            <label>狀態</label>
+                            <select id="filterStatus">
+                                <option value="">全部狀態</option>
+                                <option value="SUCCESS">成功</option>
+                                <option value="FAILED">失敗</option>
+                                <option value="ERROR">錯誤</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>開始日期</label>
+                            <input type="date" id="filterStartDate" />
+                        </div>
+                        <div class="form-group">
+                            <label>結束日期</label>
+                            <input type="date" id="filterEndDate" />
+                        </div>
+                        <div class="form-group">
+                            <label>搜尋關鍵字</label>
+                            <input type="text" id="filterSearch" placeholder="搜尋描述、目標名稱..." />
+                        </div>
+                        <div class="form-group">
+                            <label>每頁筆數</label>
+                            <select id="filterLimit">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="applyLogFilters()">套用過濾</button>
+                        <button class="btn" onclick="clearLogFilters()">清除過濾</button>
+                        <button class="btn" onclick="hideLogFilters()">關閉</button>
+                    </div>
+                </div>
+
+                <!-- 統計資訊 -->
+                <div id="logStats" class="card hidden">
+                    <h3>操作統計</h3>
+                    <div id="logStatsContent">載入中...</div>
+                    <button class="btn" onclick="hideLogStats()" style="margin-top: 15px;">關閉</button>
+                </div>
+                
+                <!-- 分頁導航 -->
+                <div id="logPagination" class="flex" style="justify-content: center; margin: 20px 0;">
+                    <!-- 分頁按鈕將動態生成 -->
+                </div>
+                
+                <!-- 日誌表格 -->
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>時間</th>
+                                <th>使用者</th>
+                                <th>角色</th>
+                                <th>模組</th>
+                                <th>操作</th>
+                                <th>目標</th>
+                                <th>描述</th>
+                                <th>狀態</th>
+                                <th>執行時間</th>
+                                <th>詳情</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTable">
+                            <tr><td colspan="10">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 日誌詳情模態框 -->
+                <div id="logDetailModal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 800px; z-index: 1000; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+                        <h3>操作日誌詳情</h3>
+                        <button onclick="closeLogDetailModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+                    <div id="logDetailContent">
+                        <!-- 詳情內容將動態填充 -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1010,6 +1175,9 @@
                 case 'facematch':
                     await loadFaceMatch();
                     break;
+                case 'logs':
+                    await loadLogs();
+                    break;
             }
         }
 
@@ -1057,6 +1225,8 @@
                                 <button class="btn btn-primary" onclick="editItem('workorder', ${item.id})">編輯</button>
                                 <button class="btn btn-danger" onclick="deleteItem('workorder', ${item.id})">刪除</button>
                                 ${item.status === 'PENDING' ? `<button class="btn" style="background: #17a2b8; color: white;" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
+                                ${item.status === 'RETURNED_TO_APPLICANT' ? `<button class="btn" style="background: #28a745; color: white;" onclick="resubmitWorkOrder(${item.id})">重新提交</button>` : ''}
+                                ${['PENDING_EHS', 'PENDING_MANAGER'].includes(item.status) && ['EHS', 'MANAGER', 'ADMIN'].includes(currentUserRole) ? `<button class="btn" style="background: #17a2b8; color: white;" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
                             </td>
                         </tr>
                     `).join('');
@@ -1210,11 +1380,16 @@
         function getStatusText(status, type) {
             const statusMaps = {
                 workorder: {
-                    'PENDING': '待審核',
+                    'DRAFT': '草稿',
+                    'SUBMITTED': '已提交',
+                    'PENDING_EHS': '職環安審核中',
+                    'PENDING_MANAGER': '經理審核中',
                     'APPROVED': '已核准',
-                    'COMPLETED': '已完成',
                     'REJECTED': '已駁回',
-                    'RETURNED': '已退回'
+                    'RETURNED_TO_APPLICANT': '已退回申請人',
+                    'IN_PROGRESS': '進行中',
+                    'COMPLETED': '已完成',
+                    'CANCELLED': '已取消'
                 },
                 qualification: {
                     'SAFETY': '安全資格',
@@ -1279,9 +1454,9 @@
                 document.getElementById('contractorPhone').value = item.phone || '';
                 document.getElementById('contractorStatus').value = item.status || 'ACTIVE';
             } else if (type === 'workorder') {
-                document.getElementById('workorderOrderNumber').value = item.orderNumber || '';
+                document.getElementById('workorderNumber').value = item.orderNumber || '';
                 document.getElementById('workorderTitle').value = item.title || '';
-                document.getElementById('workorderContractorId').value = item.contractorId || '';
+                document.getElementById('workorderContractor').value = item.contractorId || '';
                 document.getElementById('workorderLocation').value = item.location || '';
                 document.getElementById('workorderStatus').value = item.status || 'PENDING';
             } else if (type === 'qualification') {
@@ -1623,10 +1798,21 @@
                     // 根據權限顯示/隱藏簽核按鈕
                     const approvalActions = document.querySelector('.approval-actions');
                     const approvalSection = document.querySelector('.approval-section:last-child');
+                    const adminActions = document.getElementById('adminActions');
+                    
                     if (canApprove) {
                         approvalSection.style.display = 'block';
                     } else {
                         approvalSection.style.display = 'none';
+                    }
+                    
+                    // 管理員可以看到管理員駁回功能
+                    if (currentUserRole === 'ADMIN') {
+                        adminActions.style.display = 'block';
+                        // 管理員總是可以看到簽核區域
+                        approvalSection.style.display = 'block';
+                    } else {
+                        adminActions.style.display = 'none';
                     }
                     
                     // 顯示簽核模態框
@@ -1637,6 +1823,88 @@
             }
         }
 
+        // 顯示駁回選項
+        function showRejectOptions() {
+            document.getElementById('rejectOptions').style.display = 'block';
+            document.getElementById('rejectBtn').style.display = 'none';
+            document.getElementById('confirmRejectBtn').style.display = 'inline-block';
+            document.getElementById('cancelRejectBtn').style.display = 'inline-block';
+            
+            // 根據用戶角色設定駁回選項
+            const rejectToSelect = document.getElementById('rejectTo');
+            const rejectHelpText = document.getElementById('rejectHelpText');
+            
+            if (currentUserRole === 'EHS') {
+                // 職環安是第一層，只能駁回給申請人
+                rejectToSelect.innerHTML = '<option value="APPLICANT">駁回給申請人</option>';
+                rejectHelpText.innerHTML = '• 駁回給申請人：申請人可修正後重新提交';
+                console.log('職環安用戶：只顯示駁回給申請人選項');
+            } else if (currentUserRole === 'MANAGER') {
+                // 再生經理可選擇駁回給申請人或上一層職環安
+                rejectToSelect.innerHTML = `
+                    <option value="APPLICANT">駁回給申請人</option>
+                    <option value="PREVIOUS_LEVEL">駁回給上一層職環安</option>
+                `;
+                rejectHelpText.innerHTML = `
+                    • 駁回給申請人：申請人可修正後重新提交<br>
+                    • 駁回給上一層職環安：要求職環安重新審核
+                `;
+                console.log('經理用戶：顯示兩個駁回選項');
+            } else {
+                // 其他角色（如管理員）默認只能駁回給申請人
+                rejectToSelect.innerHTML = '<option value="APPLICANT">駁回給申請人</option>';
+                rejectHelpText.innerHTML = '• 駁回給申請人：申請人可修正後重新提交';
+            }
+        }
+
+        // 隱藏駁回選項
+        function hideRejectOptions() {
+            document.getElementById('rejectOptions').style.display = 'none';
+            document.getElementById('rejectBtn').style.display = 'inline-block';
+            document.getElementById('confirmRejectBtn').style.display = 'none';
+            document.getElementById('cancelRejectBtn').style.display = 'none';
+        }
+
+        // 顯示管理員駁回選項
+        function showAdminRejectOptions() {
+            document.getElementById('adminRejectOptions').style.display = 'block';
+            document.getElementById('confirmAdminRejectBtn').style.display = 'inline-block';
+        }
+
+        // 執行管理員駁回
+        async function performAdminReject() {
+            if (!currentApprovalId) {
+                showMessage('沒有選擇要簽核的施工單', 'error');
+                return;
+            }
+
+            const rejectTo = document.getElementById('adminRejectTo').value;
+            const comments = document.getElementById('approvalComment').value.trim();
+
+            try {
+                const data = await apiCall(`${API_BASE}/approvals/${currentApprovalId}/admin-reject`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        rejectTo,
+                        comments
+                    })
+                });
+
+                if (data.success) {
+                    showMessage(data.message);
+                    closeApprovalModal();
+                    loadPendingApprovals();
+                    if (currentTab === 'workorders') {
+                        loadWorkOrders();
+                    }
+                } else {
+                    showMessage(data.message || '管理員駁回失敗', 'error');
+                }
+            } catch (error) {
+                showMessage('管理員駁回錯誤: ' + error.message, 'error');
+            }
+        }
+
         // 執行簽核動作
         async function performApproval(action) {
             if (!currentApprovalId) {
@@ -1644,31 +1912,69 @@
                 return;
             }
 
-            const comment = document.getElementById('approvalComment').value.trim();
-            const approver = currentUserRole || '管理員';
+            const comments = document.getElementById('approvalComment').value.trim();
+            const rejectTo = action === 'REJECTED' ? document.getElementById('rejectTo').value : undefined;
 
             try {
-                const data = await apiCall(`${API_BASE}/work-orders/${currentApprovalId}/approve`, {
+                // 根據用戶角色決定API端點
+                let endpoint;
+                if (currentUserRole === 'EHS') {
+                    endpoint = `${API_BASE}/approvals/${currentApprovalId}/ehs`;
+                } else if (currentUserRole === 'MANAGER') {
+                    endpoint = `${API_BASE}/approvals/${currentApprovalId}/manager`;
+                } else {
+                    showMessage('您沒有簽核權限', 'error');
+                    return;
+                }
+
+                const requestBody = {
+                    action,
+                    comments
+                };
+
+                if (action === 'REJECTED' && rejectTo) {
+                    requestBody.rejectTo = rejectTo;
+                }
+
+                const data = await apiCall(endpoint, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action,
-                        comment,
-                        approver
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (data.success) {
-                    showMessage(`簽核${getActionText(action)}成功`);
+                    showMessage(data.message || `簽核${getActionText(action)}成功`);
                     closeApprovalModal();
-                    loadPendingApprovals(); // 重新載入待簽核清單
+                    loadPendingApprovals();
                     if (currentTab === 'workorders') {
-                        loadWorkOrders(); // 如果在施工單頁面也重新載入
+                        loadWorkOrders();
                     }
                 } else {
-                    showMessage('簽核失敗', 'error');
+                    showMessage(data.message || '簽核失敗', 'error');
                 }
             } catch (error) {
                 showMessage('簽核錯誤: ' + error.message, 'error');
+            }
+        }
+
+        // 重新提交被駁回的施工單
+        async function resubmitWorkOrder(workOrderId) {
+            if (!confirm('確定要重新提交此施工單嗎？')) {
+                return;
+            }
+
+            try {
+                const data = await apiCall(`${API_BASE}/approvals/${workOrderId}/resubmit`, {
+                    method: 'POST'
+                });
+
+                if (data.success) {
+                    showMessage(data.message || '重新提交成功');
+                    loadWorkOrders(); // 重新載入施工單列表
+                } else {
+                    showMessage(data.message || '重新提交失敗', 'error');
+                }
+            } catch (error) {
+                showMessage('重新提交錯誤: ' + error.message, 'error');
             }
         }
 
@@ -1677,6 +1983,11 @@
             hideElement(document.getElementById('approvalModal'));
             currentApprovalId = null;
             document.getElementById('approvalComment').value = '';
+            
+            // 重置所有駁回選項
+            hideRejectOptions();
+            document.getElementById('adminRejectOptions').style.display = 'none';
+            document.getElementById('confirmAdminRejectBtn').style.display = 'none';
         }
 
         // 快速簽核功能
@@ -1718,6 +2029,326 @@
                 'RETURNED': '退回修正'
             };
             return texts[action] || action;
+        }
+
+        // 操作日誌管理
+        let currentLogPage = 1;
+        let logFilters = {};
+
+        // 載入操作日誌
+        async function loadLogs(page = 1) {
+            try {
+                currentLogPage = page;
+                const params = new URLSearchParams({
+                    page: page,
+                    limit: logFilters.limit || 50,
+                    ...logFilters
+                });
+
+                const data = await apiCall(`${API_BASE}/logs?${params}`);
+                if (data.success) {
+                    displayLogs(data.data);
+                    displayLogPagination(data.pagination);
+                } else {
+                    showMessage('載入日誌失敗', 'error');
+                }
+            } catch (error) {
+                document.getElementById('logsTable').innerHTML = `<tr><td colspan="10" style="color: red;">載入失敗: ${error.message}</td></tr>`;
+            }
+        }
+
+        // 顯示日誌
+        function displayLogs(logs) {
+            const tbody = document.getElementById('logsTable');
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #666;">無符合條件的日誌記錄</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${new Date(log.createdAt).toLocaleString('zh-TW')}</td>
+                    <td>${log.username}</td>
+                    <td>${log.userRole || '-'}</td>
+                    <td><span class="status-badge" style="background: ${getModuleColor(log.module)};">${getModuleText(log.module)}</span></td>
+                    <td><span class="status-badge" style="background: ${getOperationColor(log.operation)};">${getOperationText(log.operation)}</span></td>
+                    <td>${log.targetName || '-'}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${log.description}</td>
+                    <td><span class="status-badge status-${log.status.toLowerCase()}">${getLogStatusText(log.status)}</span></td>
+                    <td>${log.executionTime ? log.executionTime + 'ms' : '-'}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="showLogDetail(${log.id})" style="padding: 4px 8px; font-size: 12px;">詳情</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 顯示分頁
+        function displayLogPagination(pagination) {
+            const container = document.getElementById('logPagination');
+            if (pagination.totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // 上一頁
+            if (pagination.currentPage > 1) {
+                paginationHTML += `<button class="btn" onclick="loadLogs(${pagination.currentPage - 1})">« 上一頁</button>`;
+            }
+
+            // 頁碼
+            const startPage = Math.max(1, pagination.currentPage - 2);
+            const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === pagination.currentPage ? 'btn-primary' : '';
+                paginationHTML += `<button class="btn ${active}" onclick="loadLogs(${i})">${i}</button>`;
+            }
+
+            // 下一頁
+            if (pagination.currentPage < pagination.totalPages) {
+                paginationHTML += `<button class="btn" onclick="loadLogs(${pagination.currentPage + 1})">下一頁 »</button>`;
+            }
+
+            // 總計信息
+            paginationHTML += `<span style="margin-left: 20px; align-self: center;">第 ${pagination.currentPage} 頁，共 ${pagination.totalPages} 頁，總計 ${pagination.totalItems} 條記錄</span>`;
+
+            container.innerHTML = paginationHTML;
+        }
+
+        // 顯示過濾器
+        function showLogFilters() {
+            showElement(document.getElementById('logFilters'));
+        }
+
+        function hideLogFilters() {
+            hideElement(document.getElementById('logFilters'));
+        }
+
+        // 套用過濾
+        function applyLogFilters() {
+            logFilters = {
+                module: document.getElementById('filterModule').value,
+                operation: document.getElementById('filterOperation').value,
+                username: document.getElementById('filterUsername').value,
+                status: document.getElementById('filterStatus').value,
+                startDate: document.getElementById('filterStartDate').value,
+                endDate: document.getElementById('filterEndDate').value,
+                search: document.getElementById('filterSearch').value,
+                limit: document.getElementById('filterLimit').value
+            };
+
+            // 移除空值
+            Object.keys(logFilters).forEach(key => {
+                if (!logFilters[key]) delete logFilters[key];
+            });
+
+            loadLogs(1);
+            hideLogFilters();
+        }
+
+        // 清除過濾
+        function clearLogFilters() {
+            document.getElementById('filterModule').value = '';
+            document.getElementById('filterOperation').value = '';
+            document.getElementById('filterUsername').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterLimit').value = '50';
+            
+            logFilters = {};
+            loadLogs(1);
+        }
+
+        // 顯示統計
+        async function showLogStats() {
+            try {
+                const data = await apiCall(`${API_BASE}/logs/stats?days=7`);
+                if (data.success) {
+                    displayLogStats(data.data);
+                    showElement(document.getElementById('logStats'));
+                }
+            } catch (error) {
+                showMessage('載入統計失敗: ' + error.message, 'error');
+            }
+        }
+
+        function hideLogStats() {
+            hideElement(document.getElementById('logStats'));
+        }
+
+        // 顯示統計內容
+        function displayLogStats(stats) {
+            const container = document.getElementById('logStatsContent');
+            
+            let html = `<h4>過去 ${stats.period} 統計</h4>`;
+            
+            // 模組統計
+            html += '<h5>📊 按模組統計</h5>';
+            html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">';
+            stats.moduleStats.forEach(stat => {
+                html += `
+                    <div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+                        <div style="font-weight: bold;">${getModuleText(stat.module)}</div>
+                        <div style="color: #28a745;">成功: ${stat.success}</div>
+                        <div style="color: #dc3545;">失敗: ${stat.error}</div>
+                        <div>總計: ${stat.total}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // 操作統計
+            html += '<h5>⚡ 最常用操作</h5>';
+            html += '<div style="margin-bottom: 20px;">';
+            stats.operationStats.slice(0, 5).forEach(stat => {
+                html += `<div style="margin: 5px 0;"><strong>${getOperationText(stat.operation)}</strong>: ${stat.count} 次</div>`;
+            });
+            html += '</div>';
+
+            // 使用者統計
+            html += '<h5>👥 最活躍使用者</h5>';
+            html += '<div>';
+            stats.userStats.slice(0, 5).forEach(stat => {
+                html += `<div style="margin: 5px 0;"><strong>${stat.username}</strong> (${stat.userRole}): ${stat.count} 次操作</div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // 顯示日誌詳情
+        async function showLogDetail(logId) {
+            try {
+                const data = await apiCall(`${API_BASE}/logs`);
+                const log = data.data.find(l => l.id === logId);
+                
+                if (log) {
+                    displayLogDetail(log);
+                    showElement(document.getElementById('logDetailModal'));
+                }
+            } catch (error) {
+                showMessage('載入日誌詳情失敗: ' + error.message, 'error');
+            }
+        }
+
+        function closeLogDetailModal() {
+            hideElement(document.getElementById('logDetailModal'));
+        }
+
+        // 顯示日誌詳情內容
+        function displayLogDetail(log) {
+            const container = document.getElementById('logDetailContent');
+            
+            const details = log.details ? JSON.parse(log.details) : {};
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 150px 1fr; gap: 10px; margin-bottom: 20px;">
+                    <strong>操作時間:</strong><span>${new Date(log.createdAt).toLocaleString('zh-TW')}</span>
+                    <strong>使用者:</strong><span>${log.username} (${log.userRole})</span>
+                    <strong>模組:</strong><span>${getModuleText(log.module)}</span>
+                    <strong>操作類型:</strong><span>${getOperationText(log.operation)}</span>
+                    <strong>操作目標:</strong><span>${log.targetType} - ${log.targetName}</span>
+                    <strong>執行狀態:</strong><span class="status-badge status-${log.status.toLowerCase()}">${getLogStatusText(log.status)}</span>
+                    <strong>執行時間:</strong><span>${log.executionTime ? log.executionTime + 'ms' : '無記錄'}</span>
+                    <strong>IP 地址:</strong><span>${log.ipAddress || '未記錄'}</span>
+                    <strong>Session ID:</strong><span style="font-family: monospace; font-size: 12px;">${log.sessionId || '未記錄'}</span>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>操作描述:</strong>
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px;">${log.description}</div>
+                </div>
+                
+                ${log.errorMessage ? `
+                    <div style="margin-bottom: 15px;">
+                        <strong>錯誤訊息:</strong>
+                        <div style="padding: 10px; background: #f8d7da; border-radius: 4px; margin-top: 5px; color: #721c24;">${log.errorMessage}</div>
+                    </div>
+                ` : ''}
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>詳細資訊:</strong>
+                    <pre style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px; overflow-x: auto; font-size: 12px;">${JSON.stringify(details, null, 2)}</pre>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>User Agent:</strong>
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px; font-size: 12px; word-break: break-all;">${log.userAgent || '未記錄'}</div>
+                </div>
+            `;
+        }
+
+        // 獲取模組顏色
+        function getModuleColor(module) {
+            const colors = {
+                'auth': '#007bff',
+                'contractors': '#28a745',
+                'workorders': '#ffc107',
+                'qualifications': '#17a2b8',
+                'users': '#6f42c1',
+                'facematch': '#fd7e14',
+                'logs': '#6c757d'
+            };
+            return colors[module] || '#6c757d';
+        }
+
+        // 獲取操作顏色
+        function getOperationColor(operation) {
+            const colors = {
+                'LOGIN': '#28a745',
+                'LOGOUT': '#6c757d',
+                'CREATE': '#007bff',
+                'UPDATE': '#ffc107',
+                'DELETE': '#dc3545',
+                'APPROVE': '#28a745',
+                'REJECT': '#dc3545',
+                'RENEW': '#17a2b8',
+                'SUSPEND': '#fd7e14'
+            };
+            return colors[operation] || '#6c757d';
+        }
+
+        // 文字轉換函數
+        function getModuleText(module) {
+            const texts = {
+                'auth': '認證系統',
+                'contractors': '承攬商管理',
+                'workorders': '施工單管理',
+                'qualifications': '年度資格管理',
+                'users': '使用者管理',
+                'facematch': 'FaceMatch整合',
+                'logs': '日誌管理'
+            };
+            return texts[module] || module;
+        }
+
+        function getOperationText(operation) {
+            const texts = {
+                'LOGIN': '登入',
+                'LOGOUT': '登出',
+                'CREATE': '新增',
+                'UPDATE': '更新',
+                'DELETE': '刪除',
+                'APPROVE': '核准',
+                'REJECT': '駁回',
+                'RENEW': '續約',
+                'SUSPEND': '停用'
+            };
+            return texts[operation] || operation;
+        }
+
+        function getLogStatusText(status) {
+            const texts = {
+                'SUCCESS': '成功',
+                'FAILED': '失敗',
+                'ERROR': '錯誤'
+            };
+            return texts[status] || status;
         }
 
         // 初始化
