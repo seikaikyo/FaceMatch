@@ -874,11 +874,8 @@
                     </div>
                     <div class="user-info">
                         <div class="role-selector">
-                            <span>API 版本:</span>
-                            <select id="apiVersion" onchange="switchAPI()">
-                                <option value="legacy">Legacy API (5001)</option>
-                                <option value="typescript">TypeScript API (5002)</option>
-                            </select>
+                            <span>後端版本:</span>
+                            <span class="api-version-badge">TypeScript API (5001)</span>
                         </div>
                         <div class="role-selector">
                             <span>當前角色:</span>
@@ -1473,14 +1470,9 @@
     </div>
 
     <script>
-        // API 配置
-        const API_ENDPOINTS = {
-            legacy: 'http://localhost:5001/api',
-            typescript: 'http://localhost:5002/api'
-        };
-        
-        let API_BASE = API_ENDPOINTS.legacy; // 預設使用 Legacy API
-        let currentAPIVersion = 'legacy';
+        // API 配置 (統一使用 TypeScript 後端)
+        const API_BASE = 'http://localhost:5001/api';
+        let currentAPIVersion = 'typescript';
         let currentUser = null;
         let currentTab = 'contractors';
         let editingItem = null;
@@ -1742,37 +1734,8 @@
             console.log(`${type.toUpperCase()}: ${text}`);
         }
 
-        // TypeScript API 已實現的端點
-        const TYPESCRIPT_ENDPOINTS = [
-            '/api/ad-config',
-            '/api/approvers', 
-            '/api/logs/stats',
-            '/api/qualifications',
-            '/api/users',
-            '/api/contractors',
-            '/api/work-orders',
-            '/api/approvals',
-            '/api/login',
-            '/api/facematch'
-        ];
-
-        // 智能 API 路由 - 檢查端點是否在 TypeScript API 中實現
+        // 智能 API 路由 (所有端點均已遷移到 TypeScript)
         function getApiUrl(endpoint) {
-            // 如果當前選擇 TypeScript API，檢查該端點是否已實現
-            if (currentAPIVersion === 'typescript') {
-                const isImplemented = TYPESCRIPT_ENDPOINTS.some(impl => 
-                    endpoint.includes(impl.replace('/api', ''))
-                );
-                if (isImplemented) {
-                    return API_ENDPOINTS.typescript + endpoint.replace(API_BASE, '');
-                } else {
-                    // 未實現的端點自動降級到 Legacy API
-                    console.log(`⚠️ ${endpoint} 尚未在 TypeScript API 實現，自動使用 Legacy API`);
-                    return API_ENDPOINTS.legacy + endpoint.replace(API_BASE, '');
-                }
-            }
-            
-            // Legacy API 或其他情況 - 直接返回原 URL
             return endpoint;
         }
 
@@ -2394,25 +2357,7 @@
         let currentApprovalId = null;
         let currentUserRole = 'ADMIN'; // 預設為管理員
 
-        // API 版本切換功能
-        function switchAPI() {
-            const apiSelect = document.getElementById('apiVersion');
-            const selectedAPI = apiSelect.value;
-            
-            // 更新 API Base URL
-            API_BASE = API_ENDPOINTS[selectedAPI];
-            currentAPIVersion = selectedAPI;
-            
-            console.log(`✅ 切換到 ${selectedAPI === 'legacy' ? 'Legacy' : 'TypeScript'} API: ${API_BASE}`);
-            
-            // 顯示切換消息
-            showMessage(`已切換到 ${selectedAPI === 'legacy' ? 'Legacy' : 'TypeScript'} API`, 'success');
-            
-            // 重新載入當前頁面數據
-            if (currentTab) {
-                loadData();
-            }
-        }
+        // 系統使用統一的 TypeScript API 後端 (已完成 100% 遷移)
 
         // 角色切換功能
         function switchRole() {
