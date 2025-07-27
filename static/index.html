@@ -1805,7 +1805,13 @@
                 const order = orderData.data.find(o => o.id === id);
                 
                 // 檢查權限
-                const canApprove = currentUserRole === '管理員' || order.currentApprover === currentUserRole;
+                const roleToApprover = {
+                    'ADMIN': '管理員',
+                    'EHS': '職環安',
+                    'MANAGER': '再生經理'
+                };
+                const approverName = roleToApprover[currentUserRole];
+                const canApprove = currentUserRole === 'ADMIN' || order.currentApprover === approverName;
                 
                 // 載入簽核歷史
                 const historyData = await apiCall(`${API_BASE}/work-orders/${id}/history`);
