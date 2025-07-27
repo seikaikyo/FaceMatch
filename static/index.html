@@ -290,12 +290,13 @@
             font-weight: 400;
             font-size: 14px;
             background: var(--bg-secondary);
-            color: var(--text-secondary);
+            color: var(--text-primary);
         }
         
         .btn:hover {
             transform: translateY(-1px);
             box-shadow: var(--shadow-sm);
+            background: var(--bg-tertiary);
         }
 
         .btn-primary { 
@@ -321,6 +322,24 @@
             border-color: var(--error);
         }
         .btn-danger:hover { 
+            opacity: 0.8;
+        }
+        
+        .btn-info {
+            background: var(--info);
+            color: white;
+            border-color: var(--info);
+        }
+        .btn-info:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border-color: #6c757d;
+        }
+        .btn-secondary:hover {
             opacity: 0.8;
         }
 
@@ -362,24 +381,89 @@
             font-weight: bold;
         }
 
-        .status-active { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .status-inactive { background: #fed7d7; color: #742a2a; border: 1px solid #feb2b2; }
-        .status-pending { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
-        .status-approved { background: #bee3f8; color: #2a4365; border: 1px solid #90cdf4; }
-        .status-completed { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .status-valid { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .status-expires-soon { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
-        .status-expired { background: #fed7d7; color: #742a2a; border: 1px solid #feb2b2; }
-        .status-suspended { background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0; }
-        .status-success { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .status-failed { background: #fed7d7; color: #742a2a; border: 1px solid #feb2b2; }
-        .status-rejected { background: #fed7d7; color: #742a2a; border: 1px solid #feb2b2; }
-        .status-returned { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
-        .status-returned-to-applicant { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
+        /* 狀態標籤 - 亮色模式 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid;
+        }
+        
+        .status-active { 
+            background: rgba(72, 187, 120, 0.1); 
+            color: var(--success); 
+            border-color: var(--success); 
+        }
+        .status-inactive { 
+            background: rgba(245, 101, 101, 0.1); 
+            color: var(--error); 
+            border-color: var(--error); 
+        }
+        .status-pending { 
+            background: rgba(237, 137, 54, 0.1); 
+            color: var(--warning); 
+            border-color: var(--warning); 
+        }
+        .status-approved { 
+            background: rgba(66, 153, 225, 0.1); 
+            color: var(--info); 
+            border-color: var(--info); 
+        }
+        .status-completed { 
+            background: rgba(72, 187, 120, 0.1); 
+            color: var(--success); 
+            border-color: var(--success); 
+        }
+        .status-valid { 
+            background: rgba(72, 187, 120, 0.1); 
+            color: var(--success); 
+            border-color: var(--success); 
+        }
+        .status-expires-soon { 
+            background: rgba(237, 137, 54, 0.1); 
+            color: var(--warning); 
+            border-color: var(--warning); 
+        }
+        .status-expired { 
+            background: rgba(245, 101, 101, 0.1); 
+            color: var(--error); 
+            border-color: var(--error); 
+        }
+        .status-suspended { 
+            background: rgba(160, 174, 192, 0.1); 
+            color: var(--text-muted); 
+            border-color: var(--text-muted); 
+        }
+        .status-success { 
+            background: rgba(72, 187, 120, 0.1); 
+            color: var(--success); 
+            border-color: var(--success); 
+        }
+        .status-failed { 
+            background: rgba(245, 101, 101, 0.1); 
+            color: var(--error); 
+            border-color: var(--error); 
+        }
+        .status-rejected { 
+            background: rgba(245, 101, 101, 0.1); 
+            color: var(--error); 
+            border-color: var(--error); 
+        }
+        .status-returned { 
+            background: rgba(237, 137, 54, 0.1); 
+            color: var(--warning); 
+            border-color: var(--warning); 
+        }
+        .status-returned-to-applicant { 
+            background: rgba(237, 137, 54, 0.1); 
+            color: var(--warning); 
+            border-color: var(--warning); 
+        }
 
         .approval-section {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
@@ -392,27 +476,27 @@
         }
 
         .history-item {
-            border-left: 4px solid #4a5568;
+            border-left: 4px solid var(--accent-primary);
             padding-left: 16px;
             margin-bottom: 16px;
-            background: #f7fafc;
+            background: var(--bg-tertiary);
             padding: 12px 16px;
             border-radius: 0 8px 8px 0;
-            color: #2d3748;
+            color: var(--text-primary);
         }
 
-        .history-approved { border-left-color: #48bb78; }
-        .history-rejected { border-left-color: #f56565; }
-        .history-returned { border-left-color: #ed8936; }
+        .history-approved { border-left-color: var(--success); }
+        .history-rejected { border-left-color: var(--error); }
+        .history-returned { border-left-color: var(--warning); }
 
         .approval-info {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
             padding: 12px;
             border-radius: 8px;
             margin: 12px 0;
             font-size: 14px;
-            color: #4a5568;
-            border: 1px solid #e2e8f0;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .login-form {
@@ -456,6 +540,36 @@
             transform: none;
             box-shadow: none;
         }
+        
+        .info-box {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            color: var(--text-primary);
+        }
+        
+        .error-box {
+            padding: 10px;
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid var(--error);
+            border-radius: 4px;
+            margin-top: 5px;
+            color: var(--error);
+        }
+        
+        .code-box {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
 
         .hidden {
             display: none !important;
@@ -470,15 +584,15 @@
         }
 
         .message.success {
-            background: #c6f6d5;
-            color: #22543d;
-            border-color: #9ae6b4;
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--success);
+            border-color: var(--success);
         }
 
         .message.error {
-            background: #fed7d7;
-            color: #742a2a;
-            border-color: #feb2b2;
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--error);
+            border-color: var(--error);
         }
 
         /* 響應式設計 */
@@ -595,7 +709,7 @@
             </form>
             
             <!-- AD 設定顯示 -->
-            <div id="adInfo" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #666; display: none;">
+            <div id="adInfo" style="margin-top: 15px; padding: 10px; background: var(--bg-tertiary); border-radius: 4px; font-size: 12px; color: var(--text-muted); display: none; border: 1px solid var(--border-color);">
                 <div>AD 網域: <span id="adDomain">未設定</span></div>
                 <div>狀態: <span id="adStatus">檢查中...</span></div>
             </div>
@@ -800,7 +914,7 @@
                     <div></div>
                     <div>
                         <button class="btn btn-primary" onclick="showForm('user')">新增使用者</button>
-                        <button class="btn" onclick="syncADUsers()" style="background: #17a2b8; color: white;">同步 AD 使用者</button>
+                        <button class="btn btn-info" onclick="syncADUsers()">同步 AD 使用者</button>
                     </div>
                 </div>
                 
@@ -970,8 +1084,8 @@
                             
                             <!-- 管理員特殊功能 -->
                             <div id="adminActions" style="display: none; margin-left: 10px;">
-                                <button class="btn" style="background: #dc3545; color: white;" onclick="showAdminRejectOptions()">管理員駁回</button>
-                                <button class="btn" style="background: #dc3545; color: white;" onclick="performAdminReject()" id="confirmAdminRejectBtn" style="display: none;">確認管理員駁回</button>
+                                <button class="btn btn-danger" onclick="showAdminRejectOptions()">管理員駁回</button>
+                                <button class="btn btn-danger" onclick="performAdminReject()" id="confirmAdminRejectBtn" style="display: none;">確認管理員駁回</button>
                             </div>
                         </div>
                     </div>
@@ -1095,8 +1209,8 @@
                     <div></div>
                     <div>
                         <button class="btn btn-primary" onclick="loadLogs()">重新整理</button>
-                        <button class="btn" onclick="showLogFilters()" style="background: #6c757d; color: white;">過濾</button>
-                        <button class="btn" onclick="showLogStats()" style="background: #17a2b8; color: white;">統計</button>
+                        <button class="btn btn-secondary" onclick="showLogFilters()">過濾</button>
+                        <button class="btn btn-info" onclick="showLogStats()">統計</button>
                     </div>
                 </div>
                 
@@ -1663,9 +1777,9 @@
                             <td>
                                 <button class="btn btn-primary" onclick="editItem('workorder', ${item.id})">編輯</button>
                                 <button class="btn btn-danger" onclick="deleteItem('workorder', ${item.id})">刪除</button>
-                                ${item.status === 'PENDING' ? `<button class="btn" style="background: #17a2b8; color: white;" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
-                                ${item.status === 'RETURNED_TO_APPLICANT' ? `<button class="btn" style="background: #28a745; color: white;" onclick="resubmitWorkOrder(${item.id})">重新提交</button>` : ''}
-                                ${['PENDING_EHS', 'PENDING_MANAGER'].includes(item.status) && ['EHS', 'MANAGER', 'ADMIN'].includes(currentUserRole) ? `<button class="btn" style="background: #17a2b8; color: white;" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
+                                ${item.status === 'PENDING' ? `<button class="btn btn-info" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
+                                ${item.status === 'RETURNED_TO_APPLICANT' ? `<button class="btn btn-success" onclick="resubmitWorkOrder(${item.id})">重新提交</button>` : ''}
+                                ${['PENDING_EHS', 'PENDING_MANAGER'].includes(item.status) && ['EHS', 'MANAGER', 'ADMIN'].includes(currentUserRole) ? `<button class="btn btn-info" onclick="viewApprovalDetails(${item.id})">簽核</button>` : ''}
                             </td>
                         </tr>
                     `).join('');
@@ -2755,24 +2869,24 @@
                 
                 <div style="margin-bottom: 15px;">
                     <strong>操作描述:</strong>
-                    <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px;">${log.description}</div>
+                    <div class="info-box">${log.description}</div>
                 </div>
                 
                 ${log.errorMessage ? `
                     <div style="margin-bottom: 15px;">
                         <strong>錯誤訊息:</strong>
-                        <div style="padding: 10px; background: #f8d7da; border-radius: 4px; margin-top: 5px; color: #721c24;">${log.errorMessage}</div>
+                        <div class="error-box">${log.errorMessage}</div>
                     </div>
                 ` : ''}
                 
                 <div style="margin-bottom: 15px;">
                     <strong>詳細資訊:</strong>
-                    <pre style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px; overflow-x: auto; font-size: 12px;">${JSON.stringify(details, null, 2)}</pre>
+                    <pre class="code-box">${JSON.stringify(details, null, 2)}</pre>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
                     <strong>User Agent:</strong>
-                    <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-top: 5px; font-size: 12px; word-break: break-all;">${log.userAgent || '未記錄'}</div>
+                    <div class="info-box" style="font-size: 12px; word-break: break-all;">${log.userAgent || '未記錄'}</div>
                 </div>
             `;
         }
