@@ -1,62 +1,99 @@
-import mongoose, { Schema } from 'mongoose';
-import { IContractor } from '../types';
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/database';
 
-const contractorSchema = new Schema<IContractor>({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 200
+interface IContractor {
+  id: number;
+  name: string;
+  contact: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ContractorCreationAttributes extends Optional<IContractor, 'id' | 'createdAt' | 'updatedAt'> {}
+
+class Contractor extends Model<IContractor, ContractorCreationAttributes> implements IContractor {
+  public id!: number;
+  public name!: string;
+  public contact!: string;
+  public phone!: string;
+  public email?: string;
+  public address?: string;
+  public status!: 'ACTIVE' | 'INACTIVE';
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Contractor.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING(200),
+      allowNull: false,
+      validate: {
+        len: [1, 200],
+      },
+    },
+    contact: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      validate: {
+        len: [1, 100],
+      },
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      validate: {
+        len: [1, 20],
+      },
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    address: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM('ACTIVE', 'INACTIVE'),
+      allowNull: false,
+      defaultValue: 'ACTIVE',
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   },
-  code: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    uppercase: true,
-    maxlength: 50
-  },
-  status: {
-    type: String,
-    required: true,
-    enum: ['ACTIVE', 'SUSPENDED', 'TERMINATED'],
-    default: 'ACTIVE'
-  },
-  contactPerson: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  contactPhone: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 20
-  },
-  contractValidFrom: {
-    type: Date,
-    required: true
-  },
-  contractValidTo: {
-    type: Date,
-    required: true
+  {
+    sequelize,
+    modelName: 'Contractor',
+    tableName: 'contractors',
+    timestamps: true,
+    indexes: [
+      {
+        fields: ['status'],
+      },
+      {
+        fields: ['name'],
+      },
+    ],
   }
-}, {
-  timestamps: true
-});
+);
 
-// 索引 (code 已通過 unique: true 自動建立)
-contractorSchema.index({ status: 1 });
-contractorSchema.index({ contractValidTo: 1 });
-
-// 驗證：合約到期日必須在生效日之後
-contractorSchema.pre('save', function(next) {
-  if (this.contractValidTo <= this.contractValidFrom) {
-    next(new Error('合約到期日必須在生效日之後'));
-  } else {
-    next();
-  }
-});
-
-export default mongoose.model<IContractor>('Contractor', contractorSchema);
+export default Contractor;

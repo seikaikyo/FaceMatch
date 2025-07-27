@@ -903,6 +903,1105 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  # 年度資格管理 (6 個端點)
+  /api/qualifications:
+    get:
+      tags:
+        - 年度資格管理
+      summary: 取得年度資格列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: 篩選年度
+          example: 2024
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED, SUSPENDED]
+          description: 篩選狀態
+        - in: query
+          name: contractorId
+          schema:
+            type: integer
+          description: 承攬商 ID
+      responses:
+        '200':
+          description: 成功取得年度資格列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Qualification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - 年度資格管理
+      summary: 建立年度資格
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualificationCreate'
+      responses:
+        '201':
+          description: 成功建立年度資格
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Qualification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/qualifications/{id}:
+    put:
+      tags:
+        - 年度資格管理
+      summary: 更新年度資格
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 資格 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualificationUpdate'
+      responses:
+        '200':
+          description: 成功更新年度資格
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Qualification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - 年度資格管理
+      summary: 刪除年度資格
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 資格 ID
+      responses:
+        '200':
+          description: 成功刪除年度資格
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "年度資格已成功刪除"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/qualifications/{id}/quick-renew:
+    post:
+      tags:
+        - 年度資格管理
+      summary: 快速續約
+      description: 快速續約到期或即將到期的資格
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 資格 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newExpiryDate
+              properties:
+                newExpiryDate:
+                  type: string
+                  format: date
+                  description: 新到期日期
+                  example: "2025-12-31"
+                comment:
+                  type: string
+                  description: 續約備註
+                  example: "年度資格自動續約"
+      responses:
+        '200':
+          description: 快速續約成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Qualification'
+                  message:
+                    type: string
+                    example: "資格已成功續約"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/qualifications/{id}/quick-suspend:
+    post:
+      tags:
+        - 年度資格管理
+      summary: 快速暫停
+      description: 快速暫停有效的資格
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 資格 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: 暫停原因
+                  example: "發現安全疑慮，暫停資格"
+                suspendUntil:
+                  type: string
+                  format: date
+                  description: 暫停至日期（可選）
+                  example: "2024-06-30"
+      responses:
+        '200':
+          description: 快速暫停成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Qualification'
+                  message:
+                    type: string
+                    example: "資格已暫停"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/qualifications/{id}/reactivate:
+    post:
+      tags:
+        - 年度資格管理
+      summary: 重新啟用
+      description: 重新啟用已暫停的資格
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 資格 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                  description: 重新啟用備註
+                  example: "問題已解決，重新啟用資格"
+      responses:
+        '200':
+          description: 重新啟用成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Qualification'
+                  message:
+                    type: string
+                    example: "資格已重新啟用"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # 使用者管理 (7 個端點)
+  /api/users:
+    get:
+      tags:
+        - 使用者管理
+      summary: 取得使用者列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [ADMIN, EHS, MANAGER, CONTRACTOR]
+          description: 篩選角色
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+          description: 篩選帳號狀態
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: 搜尋關鍵字
+      responses:
+        '200':
+          description: 成功取得使用者列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - 使用者管理
+      summary: 建立使用者
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: 成功建立使用者
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{id}:
+    put:
+      tags:
+        - 使用者管理
+      summary: 更新使用者
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 使用者 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: 成功更新使用者
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - 使用者管理
+      summary: 刪除使用者
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 使用者 ID
+      responses:
+        '200':
+          description: 成功刪除使用者
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "使用者已成功刪除"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/sync-ad:
+    post:
+      tags:
+        - 使用者管理
+      summary: 同步 AD 使用者
+      description: 從 Active Directory 同步使用者資料
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domain:
+                  type: string
+                  description: AD 網域
+                  example: "company.local"
+                ou:
+                  type: string
+                  description: 組織單位（可選）
+                  example: "OU=Users,DC=company,DC=local"
+      responses:
+        '200':
+          description: AD 同步成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      syncedUsers:
+                        type: integer
+                        description: 同步的使用者數量
+                        example: 25
+                      newUsers:
+                        type: integer
+                        description: 新增的使用者數量
+                        example: 5
+                      updatedUsers:
+                        type: integer
+                        description: 更新的使用者數量
+                        example: 20
+                  message:
+                    type: string
+                    example: "AD 使用者同步完成"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{id}/reset-password:
+    post:
+      tags:
+        - 使用者管理
+      summary: 重置密碼
+      description: 管理員重置使用者密碼
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 使用者 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+                  description: 新密碼（可選，不提供則系統自動生成）
+                  example: "newPassword123"
+                sendEmail:
+                  type: boolean
+                  description: 是否發送通知郵件
+                  default: true
+      responses:
+        '200':
+          description: 密碼重置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      temporaryPassword:
+                        type: string
+                        description: 臨時密碼（僅在未提供 newPassword 時返回）
+                  message:
+                    type: string
+                    example: "密碼已重置"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{id}/toggle-status:
+    post:
+      tags:
+        - 使用者管理
+      summary: 切換帳號狀態
+      description: 啟用或停用使用者帳號
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 使用者 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isActive
+              properties:
+                isActive:
+                  type: boolean
+                  description: 帳號狀態
+                  example: false
+                reason:
+                  type: string
+                  description: 狀態變更原因
+                  example: "員工離職，停用帳號"
+      responses:
+        '200':
+          description: 帳號狀態更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+                    example: "帳號狀態已更新"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # FaceMatch 整合 (4 個端點)
+  /api/facematch/devices:
+    get:
+      tags:
+        - FaceMatch 整合
+      summary: 取得 FaceMatch 設備列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ONLINE, OFFLINE, ERROR]
+          description: 篩選設備狀態
+        - in: query
+          name: location
+          schema:
+            type: string
+          description: 篩選設備位置
+      responses:
+        '200':
+          description: 成功取得設備列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FaceMatchDevice'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - FaceMatch 整合
+      summary: 註冊 FaceMatch 設備
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceMatchDeviceCreate'
+      responses:
+        '201':
+          description: 成功註冊設備
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FaceMatchDevice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/facematch/sync:
+    post:
+      tags:
+        - FaceMatch 整合
+      summary: 同步承攬商資料到 FaceMatch
+      description: 將承攬商和員工資料同步到 FaceMatch 系統
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contractorIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: 要同步的承攬商 ID 列表（空陣列表示同步全部）
+                  example: [1, 2, 3]
+                syncType:
+                  type: string
+                  enum: [FULL, INCREMENTAL]
+                  description: 同步類型
+                  default: "INCREMENTAL"
+                includePhotos:
+                  type: boolean
+                  description: 是否包含照片資料
+                  default: true
+      responses:
+        '200':
+          description: 同步成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      syncedContractors:
+                        type: integer
+                        description: 同步的承攬商數量
+                        example: 5
+                      syncedEmployees:
+                        type: integer
+                        description: 同步的員工數量
+                        example: 150
+                      syncTime:
+                        type: string
+                        format: date-time
+                        description: 同步完成時間
+                  message:
+                    type: string
+                    example: "FaceMatch 資料同步完成"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/facematch/access-logs:
+    get:
+      tags:
+        - FaceMatch 整合
+      summary: 取得門禁記錄
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: 開始日期
+          example: "2024-01-01"
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: 結束日期
+          example: "2024-01-31"
+        - in: query
+          name: contractorId
+          schema:
+            type: integer
+          description: 承攬商 ID
+        - in: query
+          name: deviceId
+          schema:
+            type: string
+          description: 設備 ID
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+          description: 返回記錄數量限制
+      responses:
+        '200':
+          description: 成功取得門禁記錄
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessLog'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: 總記錄數
+                        example: 500
+                      page:
+                        type: integer
+                        description: 當前頁數
+                        example: 1
+                      limit:
+                        type: integer
+                        description: 每頁記錄數
+                        example: 100
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # 企業級日誌 (3 個端點)
+  /api/logs:
+    get:
+      tags:
+        - 企業級日誌
+      summary: 取得操作日誌
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: 開始日期
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: 結束日期
+        - in: query
+          name: userId
+          schema:
+            type: integer
+          description: 使用者 ID
+        - in: query
+          name: action
+          schema:
+            type: string
+          description: 操作類型
+        - in: query
+          name: module
+          schema:
+            type: string
+            enum: [AUTH, CONTRACTOR, WORK_ORDER, APPROVAL, QUALIFICATION, USER, FACEMATCH]
+          description: 模組類型
+        - in: query
+          name: level
+          schema:
+            type: string
+            enum: [INFO, WARNING, ERROR]
+          description: 日誌等級
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+          description: 返回記錄數量限制
+      responses:
+        '200':
+          description: 成功取得操作日誌
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OperationLog'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: 總記錄數
+                        example: 1000
+                      page:
+                        type: integer
+                        description: 當前頁數
+                        example: 1
+                      limit:
+                        type: integer
+                        description: 每頁記錄數
+                        example: 100
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/logs/stats:
+    get:
+      tags:
+        - 企業級日誌
+      summary: 取得日誌統計
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [TODAY, WEEK, MONTH, YEAR]
+          description: 統計期間
+          default: "MONTH"
+        - in: query
+          name: groupBy
+          schema:
+            type: string
+            enum: [USER, MODULE, ACTION, LEVEL]
+          description: 分組方式
+          default: "MODULE"
+      responses:
+        '200':
+          description: 成功取得日誌統計
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      period:
+                        type: string
+                        description: 統計期間
+                        example: "MONTH"
+                      totalLogs:
+                        type: integer
+                        description: 總日誌數
+                        example: 5000
+                      errorCount:
+                        type: integer
+                        description: 錯誤日誌數
+                        example: 25
+                      warningCount:
+                        type: integer
+                        description: 警告日誌數
+                        example: 100
+                      stats:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            category:
+                              type: string
+                              description: 分類名稱
+                            count:
+                              type: integer
+                              description: 記錄數量
+                            percentage:
+                              type: number
+                              description: 百分比
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/logs/cleanup:
+    post:
+      tags:
+        - 企業級日誌
+      summary: 清理舊日誌
+      description: 清理指定時間之前的日誌記錄
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - beforeDate
+              properties:
+                beforeDate:
+                  type: string
+                  format: date
+                  description: 清理此日期之前的日誌
+                  example: "2023-12-31"
+                keepCritical:
+                  type: boolean
+                  description: 是否保留重要日誌
+                  default: true
+                modules:
+                  type: array
+                  items:
+                    type: string
+                  description: 要清理的模組（空陣列表示全部）
+                  example: ["AUTH", "CONTRACTOR"]
+      responses:
+        '200':
+          description: 日誌清理成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      deletedCount:
+                        type: integer
+                        description: 刪除的日誌數量
+                        example: 1500
+                      beforeDate:
+                        type: string
+                        format: date
+                        description: 清理截止日期
+                  message:
+                    type: string
+                    example: "舊日誌清理完成"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1245,6 +2344,420 @@ components:
         toStatus:
           type: string
           description: 新狀態
+        timestamp:
+          type: string
+          format: date-time
+          description: 操作時間
+
+    Qualification:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 資格 ID
+          example: 1
+        contractorId:
+          type: integer
+          description: 承攬商 ID
+          example: 1
+        contractor:
+          $ref: '#/components/schemas/Contractor'
+        qualificationType:
+          type: string
+          description: 資格類型
+          example: "安全衛生教育訓練"
+        year:
+          type: integer
+          description: 年度
+          example: 2024
+        issueDate:
+          type: string
+          format: date
+          description: 發證日期
+          example: "2024-01-15"
+        expiryDate:
+          type: string
+          format: date
+          description: 到期日期
+          example: "2024-12-31"
+        status:
+          type: string
+          enum: [ACTIVE, EXPIRED, SUSPENDED]
+          description: 狀態
+          example: "ACTIVE"
+        certificateNumber:
+          type: string
+          description: 證書編號
+          example: "CERT-2024-001"
+        issuingAuthority:
+          type: string
+          description: 發證機關
+          example: "勞動部職業安全衛生署"
+        notes:
+          type: string
+          description: 備註
+          example: "年度安全訓練完成"
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新時間
+
+    QualificationCreate:
+      type: object
+      required:
+        - contractorId
+        - qualificationType
+        - year
+        - issueDate
+        - expiryDate
+      properties:
+        contractorId:
+          type: integer
+          description: 承攬商 ID
+          example: 1
+        qualificationType:
+          type: string
+          description: 資格類型
+          example: "安全衛生教育訓練"
+        year:
+          type: integer
+          description: 年度
+          example: 2024
+        issueDate:
+          type: string
+          format: date
+          description: 發證日期
+          example: "2024-01-15"
+        expiryDate:
+          type: string
+          format: date
+          description: 到期日期
+          example: "2024-12-31"
+        certificateNumber:
+          type: string
+          description: 證書編號
+          example: "CERT-2024-001"
+        issuingAuthority:
+          type: string
+          description: 發證機關
+          example: "勞動部職業安全衛生署"
+        notes:
+          type: string
+          description: 備註
+          example: "年度安全訓練完成"
+
+    QualificationUpdate:
+      type: object
+      properties:
+        qualificationType:
+          type: string
+          description: 資格類型
+        year:
+          type: integer
+          description: 年度
+        issueDate:
+          type: string
+          format: date
+          description: 發證日期
+        expiryDate:
+          type: string
+          format: date
+          description: 到期日期
+        status:
+          type: string
+          enum: [ACTIVE, EXPIRED, SUSPENDED]
+          description: 狀態
+        certificateNumber:
+          type: string
+          description: 證書編號
+        issuingAuthority:
+          type: string
+          description: 發證機關
+        notes:
+          type: string
+          description: 備註
+
+    UserCreate:
+      type: object
+      required:
+        - username
+        - displayName
+        - email
+        - role
+      properties:
+        username:
+          type: string
+          description: 使用者名稱
+          example: "john.doe"
+        displayName:
+          type: string
+          description: 顯示名稱
+          example: "約翰·杜伊"
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+          example: "john.doe@company.com"
+        password:
+          type: string
+          description: 密碼（AD 使用者可選）
+          example: "password123"
+        department:
+          type: string
+          description: 部門
+          example: "工程部"
+        role:
+          type: string
+          enum: [ADMIN, EHS, MANAGER, CONTRACTOR]
+          description: 使用者角色
+          example: "EHS"
+        jobTitle:
+          type: string
+          description: 職稱
+          example: "職環安工程師"
+        phoneNumber:
+          type: string
+          description: 電話
+          example: "02-1234-5678"
+        employeeId:
+          type: string
+          description: 員工編號
+          example: "EMP002"
+        approvalLevel:
+          type: integer
+          description: 可簽核的層級
+          example: 2
+        canApprove:
+          type: boolean
+          description: 是否有簽核權限
+          default: false
+        authType:
+          type: string
+          enum: [LOCAL, AD]
+          description: 認證類型
+          default: "LOCAL"
+
+    UserUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: 顯示名稱
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+        department:
+          type: string
+          description: 部門
+        role:
+          type: string
+          enum: [ADMIN, EHS, MANAGER, CONTRACTOR]
+          description: 使用者角色
+        jobTitle:
+          type: string
+          description: 職稱
+        phoneNumber:
+          type: string
+          description: 電話
+        employeeId:
+          type: string
+          description: 員工編號
+        approvalLevel:
+          type: integer
+          description: 可簽核的層級
+        canApprove:
+          type: boolean
+          description: 是否有簽核權限
+        isActive:
+          type: boolean
+          description: 帳號狀態
+
+    FaceMatchDevice:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 設備 ID
+          example: "FM-001"
+        name:
+          type: string
+          description: 設備名稱
+          example: "入口門禁機"
+        location:
+          type: string
+          description: 設備位置
+          example: "大門入口"
+        ipAddress:
+          type: string
+          description: IP 地址
+          example: "192.168.1.100"
+        status:
+          type: string
+          enum: [ONLINE, OFFLINE, ERROR]
+          description: 設備狀態
+          example: "ONLINE"
+        lastSync:
+          type: string
+          format: date-time
+          description: 最後同步時間
+        model:
+          type: string
+          description: 設備型號
+          example: "FaceMatch Pro 3000"
+        firmware:
+          type: string
+          description: 韌體版本
+          example: "v2.1.5"
+        createdAt:
+          type: string
+          format: date-time
+          description: 註冊時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新時間
+
+    FaceMatchDeviceCreate:
+      type: object
+      required:
+        - id
+        - name
+        - location
+        - ipAddress
+      properties:
+        id:
+          type: string
+          description: 設備 ID
+          example: "FM-002"
+        name:
+          type: string
+          description: 設備名稱
+          example: "出口門禁機"
+        location:
+          type: string
+          description: 設備位置
+          example: "後門出口"
+        ipAddress:
+          type: string
+          description: IP 地址
+          example: "192.168.1.101"
+        model:
+          type: string
+          description: 設備型號
+          example: "FaceMatch Pro 3000"
+        firmware:
+          type: string
+          description: 韌體版本
+          example: "v2.1.5"
+
+    AccessLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 記錄 ID
+          example: 1
+        deviceId:
+          type: string
+          description: 設備 ID
+          example: "FM-001"
+        contractorId:
+          type: integer
+          description: 承攬商 ID
+          example: 1
+        employeeName:
+          type: string
+          description: 員工姓名
+          example: "張三"
+        employeeId:
+          type: string
+          description: 員工編號
+          example: "EMP001"
+        accessTime:
+          type: string
+          format: date-time
+          description: 門禁時間
+        accessType:
+          type: string
+          enum: [ENTRY, EXIT]
+          description: 進出類型
+          example: "ENTRY"
+        result:
+          type: string
+          enum: [SUCCESS, DENIED, ERROR]
+          description: 識別結果
+          example: "SUCCESS"
+        confidence:
+          type: number
+          description: 識別信心度
+          example: 0.95
+        photo:
+          type: string
+          description: 現場照片 URL
+          example: "/photos/access/20240115_090030.jpg"
+        temperature:
+          type: number
+          description: 體溫（如有測溫功能）
+          example: 36.5
+
+    OperationLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 日誌 ID
+          example: 1
+        userId:
+          type: integer
+          description: 操作使用者 ID
+          example: 1
+        username:
+          type: string
+          description: 使用者名稱
+          example: "admin"
+        module:
+          type: string
+          enum: [AUTH, CONTRACTOR, WORK_ORDER, APPROVAL, QUALIFICATION, USER, FACEMATCH]
+          description: 模組類型
+          example: "CONTRACTOR"
+        action:
+          type: string
+          description: 操作類型
+          example: "CREATE"
+        description:
+          type: string
+          description: 操作描述
+          example: "建立新承攬商：台積電承攬商"
+        level:
+          type: string
+          enum: [INFO, WARNING, ERROR]
+          description: 日誌等級
+          example: "INFO"
+        ipAddress:
+          type: string
+          description: 操作者 IP
+          example: "192.168.1.50"
+        userAgent:
+          type: string
+          description: 瀏覽器資訊
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        requestId:
+          type: string
+          description: 請求 ID
+          example: "req-123456789"
+        duration:
+          type: integer
+          description: 操作耗時（毫秒）
+          example: 150
+        metadata:
+          type: object
+          description: 額外資料
+          example: {"contractorId": 1, "oldStatus": "INACTIVE", "newStatus": "ACTIVE"}
         timestamp:
           type: string
           format: date-time

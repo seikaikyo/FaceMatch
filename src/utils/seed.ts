@@ -1,12 +1,12 @@
 import { User, Contractor } from '../models';
-import { AuthService } from './auth';
 import { config } from '../config';
 import logger from './logger';
+import bcrypt from 'bcryptjs';
 
 export async function seedDatabase(): Promise<void> {
   try {
     // 檢查是否已經有管理員用戶
-    const adminExists = await User.findOne({ role: 'ADMIN' });
+    const adminExists = await User.findOne({ where: { role: 'ADMIN' } });
     if (adminExists) {
       logger.info('管理員用戶已存在，跳過種子資料建立');
       return;
@@ -15,99 +15,104 @@ export async function seedDatabase(): Promise<void> {
     logger.info('開始建立種子資料...');
 
     // 建立預設管理員用戶
-    const adminPassword = await AuthService.hashPassword(config.system.defaultAdminPassword);
-    const admin = new User({
+    const adminPassword = await bcrypt.hash(config.system.defaultAdminPassword, 12);
+    const admin = await User.create({
       username: 'admin',
       email: config.system.defaultAdminEmail,
       passwordHash: adminPassword,
-      name: '系統管理員',
+      displayName: '系統管理員',
       role: 'ADMIN',
-      permissions: ['*'],
-      isActive: true
+      isActive: true,
+      canApprove: true,
+      approvalLevel: 3,
+      authType: 'LOCAL'
     });
-    await admin.save();
     logger.info('建立管理員用戶成功');
 
     // 建立 EHS 用戶
-    const ehsPassword = await AuthService.hashPassword('ehs123');
-    const ehs = new User({
+    const ehsPassword = await bcrypt.hash('ehs123', 12);
+    const ehs = await User.create({
       username: 'ehs',
       email: 'ehs@facematch.local',
       passwordHash: ehsPassword,
-      name: '職環安人員',
+      displayName: '職環安人員',
       role: 'EHS',
-      permissions: ['qualification:*', 'work-order:approve'],
-      isActive: true
+      isActive: true,
+      canApprove: true,
+      approvalLevel: 1,
+      authType: 'LOCAL',
+      jobTitle: '職環安工程師',
+      department: '安全衛生處'
     });
-    await ehs.save();
     logger.info('建立 EHS 用戶成功');
 
     // 建立 MANAGER 用戶
-    const managerPassword = await AuthService.hashPassword('manager123');
-    const manager = new User({
+    const managerPassword = await bcrypt.hash('manager123', 12);
+    const manager = await User.create({
       username: 'manager',
       email: 'manager@facematch.local',
       passwordHash: managerPassword,
-      name: '再生經理',
+      displayName: '再生經理',
       role: 'MANAGER',
-      permissions: ['work-order:approve', 'report:*'],
-      isActive: true
+      isActive: true,
+      canApprove: true,
+      approvalLevel: 2,
+      authType: 'LOCAL',
+      jobTitle: '再生處經理',
+      department: '再生處'
     });
-    await manager.save();
     logger.info('建立 MANAGER 用戶成功');
 
     // 建立測試承攬商
     const testContractors = [
       {
-        name: '台灣建設工程有限公司',
-        code: 'TWC001',
-        status: 'ACTIVE',
-        contactPerson: '張建明',
-        contactPhone: '02-2345-6789',
-        contractValidFrom: new Date(),
-        contractValidTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        name: '台積電承攬商',
+        contact: '張建明',
+        phone: '02-2345-6789',
+        email: 'contact@tsmc-contractor.com',
+        address: '新竹科學園區',
+        status: 'ACTIVE' as const
       },
       {
         name: '永豐營造股份有限公司',
-        code: 'YFC002',
-        status: 'ACTIVE',
-        contactPerson: '李永豐',
-        contactPhone: '04-2468-1357',
-        contractValidFrom: new Date(),
-        contractValidTo: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000)
+        contact: '李永豐',
+        phone: '04-2468-1357',
+        email: 'contact@yungfeng.com',
+        address: '台中市西屯區',
+        status: 'ACTIVE' as const
       },
       {
         name: '中華機電工程公司',
-        code: 'CHE003',
-        status: 'SUSPENDED',
-        contactPerson: '王機電',
-        contactPhone: '07-3691-2580',
-        contractValidFrom: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
-        contractValidTo: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
+        contact: '王機電',
+        phone: '07-3691-2580',
+        email: 'contact@china-electrical.com',
+        address: '高雄市前鎮區',
+        status: 'INACTIVE' as const
       }
     ];
 
     const savedContractors = [];
     for (const contractorData of testContractors) {
-      const contractor = new Contractor(contractorData);
-      await contractor.save();
+      const contractor = await Contractor.create(contractorData);
       savedContractors.push(contractor);
     }
     logger.info('建立測試承攬商成功');
 
     // 建立承攬商用戶
-    const contractorPassword = await AuthService.hashPassword('contractor123');
-    const contractor = new User({
+    const contractorPassword = await bcrypt.hash('contractor123', 12);
+    const contractor = await User.create({
       username: 'contractor',
       email: 'contractor@test.com',
       passwordHash: contractorPassword,
-      name: '承攬商用戶',
+      displayName: '承攬商用戶',
       role: 'CONTRACTOR',
-      contractorId: savedContractors[0]._id,
-      permissions: ['person:*', 'work-order:create'],
-      isActive: true
+      contractorId: savedContractors[0].id,
+      isActive: true,
+      canApprove: false,
+      authType: 'LOCAL',
+      jobTitle: '現場主管',
+      department: '工程部'
     });
-    await contractor.save();
     logger.info('建立承攬商用戶成功');
 
     logger.info('種子資料建立完成！');

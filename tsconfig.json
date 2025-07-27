@@ -47,6 +47,9 @@
     "**/*.spec.ts",
     "legacy/**/*",
     "client/**/*",
-    "static/**/*"
+    "static/**/*",
+    "src/controllers.bak/**/*",
+    "src/services.bak/**/*", 
+    "src/routes.bak/**/*"
   ]
 }

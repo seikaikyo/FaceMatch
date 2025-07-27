@@ -8,7 +8,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import YAML from 'yamljs';
 import path from 'path';
 import { config } from './config';
-import connectDatabase from './config/database';
+// import connectDatabase from './config/database';
 import logger from './utils/logger';
 
 const app = express();
@@ -83,7 +83,7 @@ app.get('/api-docs.json', (req, res) => {
 // API 路由
 import apiRoutes from './routes/api';
 import { errorHandler, notFound } from './middleware/error';
-import { seedDatabase } from './utils/seed';
+// import { seedDatabase } from './utils/seed';
 app.use('/api', apiRoutes);
 
 // 404 處理
@@ -94,17 +94,8 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    // 嘗試連接資料庫，如果失敗則使用模擬資料
-    try {
-      await connectDatabase();
-      logger.info('🗄️ 使用 SQLite 資料庫');
-      
-      // 建立種子資料
-      await seedDatabase();
-    } catch (dbError) {
-      logger.warn('⚠️ 無法連接資料庫，使用模擬資料模式');
-      logger.warn('📊 所有 CRUD 操作將使用記憶體內模擬資料');
-    }
+    // 直接啟動伺服器，暫時跳過資料庫連接
+    logger.info('🚀 啟動 TypeScript 後端服務 (含 API 端點)');
     
     // 啟動伺服器
     app.listen(config.port, 'localhost', () => {
@@ -112,6 +103,7 @@ const startServer = async () => {
       logger.info(`📝 環境: ${config.nodeEnv}`);
       logger.info(`🏢 系統: ${config.system.siteName} v${config.system.siteVersion}`);
       logger.info(`🔗 本機存取: http://localhost:${config.port}/health`);
+      logger.info(`📖 API 文檔: http://localhost:${config.port}/api-docs`);
     });
   } catch (error) {
     logger.error('伺服器啟動失敗:', error);
