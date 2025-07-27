@@ -38,7 +38,11 @@
       "Bash(npx create-react-app:*)",
       "Bash(sudo systemctl status:*)",
       "Bash(mv:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:documenter.getpostman.com)",
+      "Bash(grep:*)",
+      "Bash(git reset:*)",
+      "Bash(fuser:*)"
     ],
     "deny": []
   }
