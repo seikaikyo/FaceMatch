@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { Sequelize, DataTypes } = require('sequelize');
 const { Client } = require('ldapts');
 const bcrypt = require('bcrypt');
@@ -1624,6 +1625,14 @@ app.delete('/api/logs/cleanup', async (req, res) => {
   }
 });
 
+// 靜態文件服務 - 整合前端
+app.use(express.static(path.join(__dirname, 'static')));
+
+// 處理前端路由 - SPA 支援
+app.get(['/', '/contractors', '/workorders', '/approvals', '/users', '/qualifications', '/facematch', '/logs'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'static', 'index.html'));
+});
+
 // 健康檢查
 app.get('/health', async (req, res) => {
   try {
@@ -1646,7 +1655,8 @@ app.get('/health', async (req, res) => {
 
 // 啟動服務器
 app.listen(port, async () => {
-  console.log(`🚀 增強版後端服務啟動在 http://localhost:${port}`);
+  console.log(`🚀 整合版後端服務啟動在 http://localhost:${port}`);
+  console.log('🌐 前端已整合，直接訪問此地址即可使用完整系統');
   console.log('📊 使用 SQLite 數據庫');
   console.log('👥 簽核者: 職環安 → 再生經理');
   console.log('🔐 AD 支援:', AD_CONFIG.enabled ? '啟用' : '停用');
