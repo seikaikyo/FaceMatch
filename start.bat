@@ -36,7 +36,11 @@ echo 💾 資料庫: SQLite (facematch.sqlite)
 echo.
 echo 👤 登入帳號:
 echo Username: admin
-echo Password: admin123
+echo Password: admin123 (來自 .env 檔案)
+echo Username: safety
+echo Password: safety123 (來自 .env 檔案)
+echo Username: manager  
+echo Password: manager123 (來自 .env 檔案)
 echo.
 echo 📋 可用功能:
 echo - 👥 承攬商管理 (完整 CRUD)

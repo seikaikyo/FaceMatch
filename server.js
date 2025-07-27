@@ -643,10 +643,10 @@ app.post('/api/work-orders', async (req, res) => {
   try {
     const workOrder = await WorkOrder.create({
       ...req.body,
-      status: 'PENDING',
+      status: req.body.status || 'DRAFT', // 預設為草稿，允許指定狀態
       submittedBy: req.body.submittedBy || '系統管理員',
-      currentApprover: '職環安',
-      approvalLevel: 1,
+      currentApprover: req.body.status === 'DRAFT' ? null : '職環安',
+      approvalLevel: req.body.status === 'DRAFT' ? 0 : 1,
       totalLevels: 2
     });
     

@@ -1689,11 +1689,11 @@
             const isRegenManager = currentUserRole === 'MANAGER';
             
             // 管理員可以看到所有功能
-            // 職環安和再生經理只能看到待簽核清單和相關功能
+            // 職環安和再生經理可以看到承攬商管理、施工單管理和待簽核清單
             const tabButtons = document.querySelectorAll('.tab-btn');
             tabButtons.forEach(btn => {
                 const tab = btn.dataset.tab;
-                if (!isManager && (tab === 'contractors' || tab === 'users' || tab === 'qualifications' || tab === 'facematch')) {
+                if (!isManager && (tab === 'users' || tab === 'qualifications' || tab === 'facematch')) {
                     btn.style.display = 'none';
                 } else {
                     btn.style.display = 'block';
@@ -1703,7 +1703,7 @@
             // 如果當前是非管理員角色且在被隱藏的頁面，自動切換到待簽核清單
             if (!isManager) {
                 const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-                if (activeTab === 'contractors' || activeTab === 'users' || activeTab === 'qualifications' || activeTab === 'facematch') {
+                if (activeTab === 'users' || activeTab === 'qualifications' || activeTab === 'facematch') {
                     // 切換到待簽核清單
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     document.querySelector('[data-tab="approvals"]').classList.add('active');
