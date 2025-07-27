@@ -1674,9 +1674,10 @@
             // 根據角色顯示/隱藏功能
             updateUIForRole();
             
-            // 重新整理頁面以更新權限和資料
+            // 重新載入當前頁面的資料，而不是整個頁面
             setTimeout(() => {
-                location.reload();
+                loadData();
+                showMessage(`已切換到${selectedRole}角色`, 'success');
             }, 100);
             
             console.log(`已切換到角色: ${selectedRole} (${currentUserRole})`);
@@ -1701,15 +1702,15 @@
             
             // 如果當前是非管理員角色且在被隱藏的頁面，自動切換到待簽核清單
             if (!isManager) {
-                const currentTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-                if (currentTab === 'contractors' || currentTab === 'users' || currentTab === 'qualifications' || currentTab === 'facematch') {
+                const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+                if (activeTab === 'contractors' || activeTab === 'users' || activeTab === 'qualifications' || activeTab === 'facematch') {
                     // 切換到待簽核清單
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     document.querySelector('[data-tab="approvals"]').classList.add('active');
                     document.querySelectorAll('.tab-content').forEach(content => hideElement(content));
                     showElement(document.getElementById('approvals'));
-                    currentTab = 'approvals';
-                    loadData();
+                    currentTab = 'approvals'; // 更新全局變數
+                    console.log('自動切換到待簽核清單');
                 }
             }
         }
@@ -1732,20 +1733,42 @@
             
             // 根據當前角色過濾待簽核項目
             let filteredApprovals = approvals;
-            if (currentUserRole !== '管理員') {
-                filteredApprovals = approvals.filter(order => order.currentApprover === currentUserRole);
+            if (currentUserRole !== 'ADMIN') {
+                // 將英文角色轉換為中文來匹配資料庫中的 currentApprover
+                const roleToApprover = {
+                    'EHS': '職環安',
+                    'MANAGER': '再生經理'
+                };
+                const approverName = roleToApprover[currentUserRole];
+                if (approverName) {
+                    filteredApprovals = approvals.filter(order => order.currentApprover === approverName);
+                }
             }
             
             if (filteredApprovals.length === 0) {
-                const message = currentUserRole === '管理員' 
+                const roleNames = {
+                    'ADMIN': '管理員',
+                    'EHS': '職環安', 
+                    'MANAGER': '再生經理',
+                    'CONTRACTOR': '承攬商'
+                };
+                const roleName = roleNames[currentUserRole] || currentUserRole;
+                const message = currentUserRole === 'ADMIN' 
                     ? '沒有待簽核的施工單' 
-                    : `沒有需要${currentUserRole}簽核的施工單`;
+                    : `沒有需要${roleName}簽核的施工單`;
                 table.innerHTML = `<tr><td colspan="7">${message}</td></tr>`;
                 return;
             }
 
             table.innerHTML = filteredApprovals.map(order => {
-                const canApprove = currentUserRole === '管理員' || order.currentApprover === currentUserRole;
+                // 檢查是否可以簽核
+                const roleToApprover = {
+                    'ADMIN': '管理員',
+                    'EHS': '職環安',
+                    'MANAGER': '再生經理'
+                };
+                const approverName = roleToApprover[currentUserRole];
+                const canApprove = currentUserRole === 'ADMIN' || order.currentApprover === approverName;
                 
                 let actionButtons = '';
                 if (canApprove) {
