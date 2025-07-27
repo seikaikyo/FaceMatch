@@ -12,6 +12,7 @@ npm run build:backend
 echo ""
 echo "🚀 使用 PM2 啟動 TypeScript 服務..."
 pm2 start ecosystem.config.js --only facematch-backend-ts
+pm2 start ecosystem.config.js --only facematch-frontend
 
 echo ""
 echo "📊 服務狀態:"
