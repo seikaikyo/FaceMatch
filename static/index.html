@@ -15,89 +15,164 @@
 
         body {
             font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+            background: #f8f9fa;
             min-height: 100vh;
             color: #2d3748;
             line-height: 1.7;
             letter-spacing: 0.025em;
+            margin: 0;
+            padding: 0;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 32px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-            margin-top: 32px;
-            margin-bottom: 32px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            color: #2d3748;
-            padding: 40px 32px;
-            text-align: center;
-            margin: -32px -32px 40px -32px;
-            border-radius: 12px 12px 0 0;
-            border-bottom: 1px solid #e2e8f0;
-            position: relative;
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
         }
         
-        .header h1 {
-            font-weight: 500;
-            font-size: 2rem;
-            margin-bottom: 8px;
+        .sidebar {
+            width: 280px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.02);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        .content-area {
+            padding: 24px;
+        }
+        
+        .container {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .sidebar-header h1 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 0;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .sidebar-header .fas {
             color: #4a5568;
-            letter-spacing: 0.05em;
         }
 
         .nav {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 32px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 16px;
-            flex-wrap: wrap;
+            padding: 16px 0;
         }
 
         .nav button {
-            padding: 12px 20px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
             color: #4a5568;
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: 400;
             font-size: 14px;
-            white-space: nowrap;
+            text-align: left;
+            border-radius: 0;
         }
 
         .nav button.active {
-            background: #4a5568;
-            color: white;
-            border-color: #4a5568;
-            box-shadow: 0 2px 4px rgba(74, 85, 104, 0.2);
+            background: #f7fafc;
+            color: #2d3748;
+            border-right: 3px solid #4a5568;
+            font-weight: 500;
         }
 
         .nav button:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-            transform: translateY(-1px);
+            background: #f7fafc;
         }
 
         .nav button.active:hover {
-            background: #2d3748;
-            transform: translateY(-1px);
+            background: #edf2f7;
         }
 
         .flex {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .page-header {
+            background: #ffffff;
+            padding: 24px;
+            margin: -24px -24px 24px -24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .role-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .role-selector select {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #2d3748;
+            font-size: 14px;
         }
 
         .card {
@@ -337,23 +412,38 @@
 
         /* 響應式設計 */
         @media (max-width: 768px) {
-            .container {
-                margin: 12px;
-                padding: 16px;
-            }
-            
-            .header {
-                margin: -16px -16px 24px -16px;
-                padding: 24px 16px;
-            }
-            
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .nav { 
+            .admin-layout {
                 flex-direction: column;
-                gap: 8px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .topbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+            
+            .user-info {
+                justify-content: space-between;
+            }
+            
+            .role-selector {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            .content-area {
+                padding: 16px;
             }
             
             .flex { 
@@ -441,38 +531,51 @@
         </div>
 
         <!-- 主系統 -->
-        <div id="mainSystem" class="container hidden">
-            <div class="header">
-                <h1><i class="fas fa-shield-alt"></i> FaceMatch 企業管理系統</h1>
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span>當前角色:</span>
-                        <select id="currentRole" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;" onchange="switchRole()">
-                            <option value="管理員">管理員</option>
-                            <option value="職環安">職環安</option>
-                            <option value="再生經理">再生經理</option>
-                        </select>
-                    </div>
-                    <p style="margin: 0;">歡迎，<span id="userName">管理員</span> | 
-                       <button id="logoutBtn" style="background: none; border: 1px solid white; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">登出</button>
-                    </p>
+        <div id="mainSystem" class="admin-layout hidden">
+            <!-- 左側邊欄 -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h1><i class="fas fa-shield-alt"></i> FaceMatch</h1>
+                </div>
+                
+                <div class="nav">
+                    <button class="tab-btn active" data-tab="contractors"><i class="fas fa-building"></i> 承攬商管理</button>
+                    <button class="tab-btn" data-tab="workorders"><i class="fas fa-clipboard-list"></i> 施工單管理</button>
+                    <button class="tab-btn" data-tab="approvals"><i class="fas fa-check-circle"></i> 待簽核清單</button>
+                    <button class="tab-btn" data-tab="users"><i class="fas fa-users"></i> 使用者管理</button>
+                    <button class="tab-btn" data-tab="qualifications"><i class="fas fa-certificate"></i> 年度資格管理</button>
+                    <button class="tab-btn" data-tab="facematch"><i class="fas fa-user-check"></i> FaceMatch 整合</button>
+                    <button class="tab-btn" data-tab="logs"><i class="fas fa-history"></i> 操作日誌</button>
                 </div>
             </div>
             
-            <div class="nav">
-                <button class="tab-btn active" data-tab="contractors"><i class="fas fa-building"></i> 承攬商管理</button>
-                <button class="tab-btn" data-tab="workorders"><i class="fas fa-clipboard-list"></i> 施工單管理</button>
-                <button class="tab-btn" data-tab="approvals"><i class="fas fa-check-circle"></i> 待簽核清單</button>
-                <button class="tab-btn" data-tab="users"><i class="fas fa-users"></i> 使用者管理</button>
-                <button class="tab-btn" data-tab="qualifications"><i class="fas fa-certificate"></i> 年度資格管理</button>
-                <button class="tab-btn" data-tab="facematch"><i class="fas fa-user-check"></i> FaceMatch 整合</button>
-                <button class="tab-btn" data-tab="logs"><i class="fas fa-history"></i> 操作日誌</button>
-            </div>
+            <!-- 主要內容區域 -->
+            <div class="main-content">
+                <div class="topbar">
+                    <div class="page-title">
+                        <h2 id="currentPageTitle"><i class="fas fa-building"></i> 承攬商管理</h2>
+                    </div>
+                    <div class="user-info">
+                        <div class="role-selector">
+                            <span>當前角色:</span>
+                            <select id="currentRole" onchange="switchRole()">
+                                <option value="管理員">管理員</option>
+                                <option value="職環安">職環安</option>
+                                <option value="再生經理">再生經理</option>
+                            </select>
+                        </div>
+                        <span>歡迎，<span id="userName">管理員</span></span>
+                        <button id="logoutBtn" class="btn">登出</button>
+                    </div>
+                </div>
+                
+                <div class="content-area">
+                    <div class="container">
             
             <!-- 承攬商管理 -->
             <div id="contractors" class="tab-content">
                 <div class="flex">
-                    <h2><i class="fas fa-building"></i> 承攬商管理</h2>
+                    <div></div>
                     <button class="btn btn-primary" onclick="showForm('contractor')"><i class="fas fa-plus"></i> 新增承攬商</button>
                 </div>
                 
@@ -529,7 +632,7 @@
             <!-- 施工單管理 -->
             <div id="workorders" class="tab-content hidden">
                 <div class="flex">
-                    <h2>施工單管理</h2>
+                    <div></div>
                     <button class="btn btn-primary" onclick="showForm('workorder')">新增施工單</button>
                 </div>
                 
@@ -591,7 +694,7 @@
             <!-- 待簽核清單 -->
             <div id="approvals" class="tab-content hidden">
                 <div class="flex">
-                    <h2>待簽核清單</h2>
+                    <div></div>
                     <button class="btn btn-primary" onclick="loadPendingApprovals()">重新整理</button>
                 </div>
                 
@@ -618,7 +721,7 @@
             <!-- 使用者管理 -->
             <div id="users" class="tab-content hidden">
                 <div class="flex">
-                    <h2>使用者管理</h2>
+                    <div></div>
                     <div>
                         <button class="btn btn-primary" onclick="showForm('user')">新增使用者</button>
                         <button class="btn" onclick="syncADUsers()" style="background: #17a2b8; color: white;">同步 AD 使用者</button>
@@ -802,7 +905,7 @@
             <!-- 年度資格管理 -->
             <div id="qualifications" class="tab-content hidden">
                 <div class="flex">
-                    <h2>年度資格管理</h2>
+                    <div></div>
                     <button class="btn btn-primary" onclick="showForm('qualification')">新增資格</button>
                 </div>
                 
@@ -864,7 +967,7 @@
             <!-- FaceMatch 整合管理 -->
             <div id="facematch" class="tab-content hidden">
                 <div class="flex">
-                    <h2>FaceMatch 整合管理</h2>
+                    <div></div>
                     <button class="btn btn-primary" onclick="showForm('facematch')">新增記錄</button>
                 </div>
                 
@@ -913,7 +1016,7 @@
             <!-- 操作日誌 -->
             <div id="logs" class="tab-content hidden">
                 <div class="flex">
-                    <h2>操作日誌</h2>
+                    <div></div>
                     <div>
                         <button class="btn btn-primary" onclick="loadLogs()">重新整理</button>
                         <button class="btn" onclick="showLogFilters()" style="background: #6c757d; color: white;">過濾</button>
@@ -1038,6 +1141,7 @@
                     </div>
                     <div id="logDetailContent">
                         <!-- 詳情內容將動態填充 -->
+                    </div>
                     </div>
                 </div>
             </div>
@@ -1301,10 +1405,31 @@
                 document.querySelectorAll('.tab-content').forEach(content => hideElement(content));
                 showElement(document.getElementById(tab));
                 
+                // 更新頁面標題
+                updatePageTitle(tab);
+                
                 currentTab = tab;
                 loadData();
             });
         });
+        
+        // 更新頁面標題
+        function updatePageTitle(tab) {
+            const titles = {
+                'contractors': '<i class="fas fa-building"></i> 承攬商管理',
+                'workorders': '<i class="fas fa-clipboard-list"></i> 施工單管理',
+                'approvals': '<i class="fas fa-check-circle"></i> 待簽核清單',
+                'users': '<i class="fas fa-users"></i> 使用者管理',
+                'qualifications': '<i class="fas fa-certificate"></i> 年度資格管理',
+                'facematch': '<i class="fas fa-user-check"></i> FaceMatch 整合',
+                'logs': '<i class="fas fa-history"></i> 操作日誌'
+            };
+            
+            const titleElement = document.getElementById('currentPageTitle');
+            if (titleElement && titles[tab]) {
+                titleElement.innerHTML = titles[tab];
+            }
+        }
 
         // 載入數據
         async function loadData() {
