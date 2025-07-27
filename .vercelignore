@@ -1,0 +1,13 @@
+node_modules
+dist
+logs
+.git
+.env
+*.log
+src
+client/node_modules
+client/build
+facematch.sqlite
+tsconfig.tsbuildinfo
+.devcontainer
+.github

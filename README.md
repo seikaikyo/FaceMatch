@@ -55,11 +55,17 @@ npm run restart:pm2   # 重啟服務
 
 ## 🌐 系統地址
 
+### 🏠 本地開發環境
 - **🎯 主系統**: http://localhost:3000 (前端)
 - **🔗 API 服務**: http://localhost:5001/api
 - **📖 API 文檔**: http://localhost:5001/api-docs
 - **🔍 健康檢查**: http://localhost:5001/health
 - **📊 管理介面**: http://localhost:5001/static
+
+### ☁️ 雲端部署環境
+- **🚀 Vercel 生產環境**: https://facematch-system-8i76wsxkr-seikaikyos-projects.vercel.app
+- **📊 GitHub Pages 展示**: https://seikaikyo.github.io/FaceMatch
+- **🎯 本地展示服務**: `npm run demo` → http://localhost:8000
 
 ### 預設登入帳號
 - **系統管理員**: `admin` / `admin123`
@@ -335,7 +341,14 @@ DELETE /api/logs/cleanup                   # 日誌清理
 
 ## 📈 版本歷史
 
-### v3.0.0 - API 遷移完成 🎉 (最新)
+### v3.1.0 - 多平台部署完成 🚀 (最新)
+- ✅ **Vercel 生產部署** - 雲端環境自動部署與 CI/CD
+- ✅ **GitHub Pages 展示** - 靜態展示頁面自動發布
+- ✅ **多平台配置** - Vercel + GitHub Actions + Codespaces 完整支援
+- ✅ **專案結構優化** - 移除 40+ 無用檔案，專案輕量化 70%
+- ✅ **部署文檔完整化** - 完整多平台部署指南
+
+### v3.0.0 - API 遷移完成 🎉
 - ✅ **100% API 遷移完成** - 42 個端點全面 TypeScript 化
 - ✅ **人臉辨識管理** - 新增完整人臉驗證與同步功能
 - ✅ **統一後端架構** - 移除雙 API 系統，統一使用 TypeScript
