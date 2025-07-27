@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FaceMatch 企業管理系統 - 展示版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 引入主要 CSS 樣式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --border-color: #e2e8f0;
+            --accent-primary: #4a5568;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --error: #f56565;
+            --info: #4299e1;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .demo-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .demo-banner h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-banner p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            margin-top: 120px;
+            padding: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .feature-card h3 {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-card h3 i {
+            color: var(--info);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-list li:before {
+            content: "✅";
+            margin-right: 0.5rem;
+        }
+
+        .api-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .api-section h2 {
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .api-group {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--info);
+        }
+
+        .api-group h4 {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .api-endpoint {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .method-get { color: #10b981; }
+        .method-post { color: #f59e0b; }
+        .method-put { color: #3b82f6; }
+        .method-delete { color: #ef4444; }
+
+        .demo-links {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .demo-links h2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .demo-link {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-link:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--info);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+                margin-top: 140px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-banner h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-banner">
+        <h1><i class="fas fa-rocket"></i> FaceMatch 企業級管理系統 - 線上展示</h1>
+        <p>100% TypeScript 後端 | 42 個 API 端點 | OpenAPI 3.0 標準 | 企業級簽核工作流程</p>
+    </div>
+
+    <div class="main-container">
+        <!-- 系統統計 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">42</div>
+                <div class="stat-label">API 端點</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">TypeScript</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">功能模組</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">2</div>
+                <div class="stat-label">簽核層級</div>
+            </div>
+        </div>
+
+        <!-- 核心功能 -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3><i class="fas fa-building"></i> 承攬商管理</h3>
+                <ul class="feature-list">
+                    <li>完整 CRUD 操作</li>
+                    <li>狀態管理 (啟用/停用)</li>
+                    <li>進階搜尋與篩選</li>
+                    <li>資料完整性驗證</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3><i class="fas fa-tasks"></i> 施工單 + 簽核</h3>
+                <ul class="feature-list">
+                    <li>多層級簽核工作流程</li>
+                    <li>智能駁回系統</li>
+                    <li>簽核歷史追蹤</li>
+                    <li>待簽核清單</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3><i class="fas fa-certificate"></i> 年度資格管理</h3>
+                <ul class="feature-list">
+                    <li>快速續約功能</li>
+                    <li>快速停用/重新啟用</li>
+                    <li>智能狀態管理</li>
+                    <li>續約歷史追蹤</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3><i class="fas fa-users"></i> 使用者管理</h3>
+                <ul class="feature-list">
+                    <li>完整使用者 CRUD</li>
+                    <li>角色權限管理</li>
+                    <li>密碼重設功能</li>
+                    <li>AD 同步功能</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3><i class="fas fa-user-check"></i> 人臉辨識管理</h3>
+                <ul class="feature-list">
+                    <li>人臉驗證功能</li>
+                    <li>數據同步功能</li>
+                    <li>設備追蹤管理</li>
+                    <li>驗證狀態管理</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3><i class="fas fa-shield-alt"></i> 企業級安全</h3>
+                <ul class="feature-list">
+                    <li>AD 網域登入</li>
+                    <li>bcrypt 密碼加密</li>
+                    <li>角色基礎權限控制</li>
+                    <li>完整操作日誌</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- API 端點展示 -->
+        <div class="api-section">
+            <h2><i class="fas fa-code"></i> API 端點總覽 (42 個)</h2>
+            <div class="api-grid">
+                <div class="api-group">
+                    <h4>認證管理 (3)</h4>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/login</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/logout</div>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/verify-session</div>
+                </div>
+
+                <div class="api-group">
+                    <h4>承攬商管理 (5)</h4>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/contractors</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/contractors</div>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/contractors/:id</div>
+                    <div class="api-endpoint"><span class="method-put">PUT</span> /api/contractors/:id</div>
+                    <div class="api-endpoint"><span class="method-delete">DELETE</span> /api/contractors/:id</div>
+                </div>
+
+                <div class="api-group">
+                    <h4>施工單 + 簽核 (15)</h4>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/work-orders</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/work-orders</div>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/work-orders/pending-approval</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/approvals/:id/submit</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/approvals/:id/ehs</div>
+                    <div style="color: #666; font-size: 0.8rem;">... 及其他 10 個簽核端點</div>
+                </div>
+
+                <div class="api-group">
+                    <h4>年度資格管理 (7)</h4>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/qualifications</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/qualifications</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/qualifications/:id/quick-renew</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/qualifications/:id/quick-suspend</div>
+                    <div style="color: #666; font-size: 0.8rem;">... 及其他 3 個端點</div>
+                </div>
+
+                <div class="api-group">
+                    <h4>人臉辨識管理 (6)</h4>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/facematch</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/facematch</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/facematch/verify</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/facematch/sync</div>
+                    <div style="color: #666; font-size: 0.8rem;">... 及其他 2 個端點</div>
+                </div>
+
+                <div class="api-group">
+                    <h4>使用者管理 (7)</h4>
+                    <div class="api-endpoint"><span class="method-get">GET</span> /api/users</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/users</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/users/:id/reset-password</div>
+                    <div class="api-endpoint"><span class="method-post">POST</span> /api/users/sync-ad</div>
+                    <div style="color: #666; font-size: 0.8rem;">... 及其他 3 個端點</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 展示連結 -->
+        <div class="demo-links">
+            <h2><i class="fas fa-external-link-alt"></i> 立即體驗</h2>
+            <div class="links-grid">
+                <a href="index.html" class="demo-link">
+                    <i class="fas fa-desktop"></i>
+                    完整系統界面
+                </a>
+                <a href="https://github.com/your-username/FaceMatch" class="demo-link">
+                    <i class="fab fa-github"></i>
+                    GitHub 原始碼
+                </a>
+                <a href="#" class="demo-link" onclick="alert('部署至 Vercel 後可用')">
+                    <i class="fas fa-book"></i>
+                    API 文檔
+                </a>
+                <a href="#" class="demo-link" onclick="alert('請查看 DEPLOYMENT.md')">
+                    <i class="fas fa-rocket"></i>
+                    部署指南
+                </a>
+            </div>
+        </div>
+
+        <!-- 技術特色 -->
+        <div class="api-section">
+            <h2><i class="fas fa-cogs"></i> 技術特色</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3><i class="fas fa-code"></i> 100% TypeScript</h3>
+                    <p>完整的類型安全，從前端到後端的統一開發體驗，減少運行時錯誤，提升開發效率。</p>
+                </div>
+                <div class="feature-card">
+                    <h3><i class="fas fa-book-open"></i> OpenAPI 3.0</h3>
+                    <p>標準化的 API 文檔，自動生成互動式測試界面，支援團隊協作和 API 版本管理。</p>
+                </div>
+                <div class="feature-card">
+                    <h3><i class="fas fa-route"></i> 企業級工作流程</h3>
+                    <p>多層級簽核系統，角色基礎權限控制，完整的業務流程自動化，適合企業環境部署。</p>
+                </div>
+                <div class="feature-card">
+                    <h3><i class="fas fa-cloud"></i> 生產環境就緒</h3>
+                    <p>PM2 進程管理，自動部署腳本，支援 Docker 容器化，可快速部署到各種雲端平台。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><i class="fas fa-heart" style="color: #f56565;"></i> 使用 TypeScript + Express.js 開發</p>
+        <p>完整的企業級承攬商管理系統，支援多層級簽核、AD 整合、人臉辨識等功能</p>
+    </div>
+
+    <script>
+        // 簡單的展示交互
+        document.addEventListener('DOMContentLoaded', function() {
+            // 為特色卡片添加點擊效果
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.02)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+
+            // 統計數字動畫
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(num => {
+                const finalValue = num.textContent;
+                if (!isNaN(parseInt(finalValue))) {
+                    let current = 0;
+                    const target = parseInt(finalValue);
+                    const increment = target / 50;
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(timer);
+                        }
+                        num.textContent = Math.floor(current) + (finalValue.includes('%') ? '%' : '');
+                    }, 50);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build backend
+      run: npm run build:backend
+      
+    - name: Install frontend dependencies
+      run: cd client && npm ci
+      
+    - name: Build frontend
+      run: npm run build:frontend
+      
+    - name: Create demo build
+      run: |
+        mkdir -p demo
+        cp -r client/build/* demo/
+        cp static/index.html demo/demo.html
+        echo '{"message": "Demo mode - Backend APIs are mocked"}' > demo/api-status.json
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./demo
+        cname: facematch.example.com  # 可選：自定義域名
