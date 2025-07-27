@@ -5,6 +5,7 @@ logs
 .env
 *.log
 src
+static
 client/node_modules
 client/build
 facematch.sqlite

@@ -1,32 +1,31 @@
 {
   "version": 2,
-  "name": "facematch-system",
   "builds": [
     {
-      "src": "static/**",
+      "src": "public/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/index.html",
-      "dest": "/static/index.html"
+      "src": "/demo.html",
+      "dest": "/public/demo.html"
     },
     {
-      "src": "/demo.html",
-      "dest": "/static/demo.html"
+      "src": "/app.html",
+      "dest": "/public/app.html"
     },
     {
       "src": "/demo",
-      "dest": "/static/demo.html"
+      "dest": "/public/demo.html"
     },
     {
       "src": "/app",
-      "dest": "/static/index.html"
+      "dest": "/public/app.html"
     },
     {
       "src": "/",
-      "dest": "/static/demo.html"
+      "dest": "/public/index.html"
     }
   ]
 }
