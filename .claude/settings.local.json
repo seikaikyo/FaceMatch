@@ -42,7 +42,8 @@
       "WebFetch(domain:documenter.getpostman.com)",
       "Bash(grep:*)",
       "Bash(git reset:*)",
-      "Bash(fuser:*)"
+      "Bash(fuser:*)",
+      "Bash(npm test)"
     ],
     "deny": []
   }
