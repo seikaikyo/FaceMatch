@@ -6,8 +6,12 @@ import usersRoutes from './users';
 import contractorsRoutes from './contractors';
 import workOrdersRoutes from './work-orders';
 import approvalsRoutes from './approvals';
+import authRoutes from './auth';
 
 const router = Router();
+
+// 認證管理路由
+router.use('/', authRoutes);
 
 // 配置管理路由
 router.use('/', configRoutes);
