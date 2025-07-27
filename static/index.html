@@ -673,6 +673,133 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.5);
         }
+
+        /* 簽核模態框樣式 */
+        .approval-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 1000;
+            background: var(--bg-secondary) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .approval-modal:hover {
+            transform: translate(-50%, -50%) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .approval-info,
+        .approval-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .approval-info h4,
+        .approval-section h4 {
+            color: var(--text-primary);
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .approval-info div {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .approval-info strong {
+            color: var(--text-primary);
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+        }
+
+        .help-text {
+            color: var(--text-secondary);
+            margin-top: 5px;
+            display: block;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .approval-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        /* 深色模式下模態框的額外樣式 */
+        [data-theme="dark"] .approval-modal {
+            background: var(--bg-secondary) !important;
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .form-control {
+            background: var(--bg-primary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .form-control::placeholder {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -1019,10 +1146,10 @@
             </div>
 
             <!-- 簽核詳情模態框 -->
-            <div id="approvalModal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 800px; z-index: 1000; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+            <div id="approvalModal" class="approval-modal card hidden">
+                <div class="modal-header">
                     <h3>施工單簽核</h3>
-                    <button onclick="closeApprovalModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    <button onclick="closeApprovalModal()" class="close-btn">&times;</button>
                 </div>
                 
                 <div id="approvalDetails">
@@ -1050,17 +1177,17 @@
                         <h4>簽核意見</h4>
                         <div class="form-group">
                             <label>意見</label>
-                            <textarea id="approvalComment" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="請輸入簽核意見"></textarea>
+                            <textarea id="approvalComment" rows="3" class="form-control" placeholder="請輸入簽核意見"></textarea>
                         </div>
                         
                         <!-- 駁回選項 (僅在駁回時顯示) -->
                         <div id="rejectOptions" class="form-group" style="display: none;">
                             <label>駁回對象</label>
-                            <select id="rejectTo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <select id="rejectTo" class="form-control">
                                 <option value="APPLICANT">駁回給申請人</option>
                                 <option value="PREVIOUS_LEVEL">駁回給上一層簽核者</option>
                             </select>
-                            <small id="rejectHelpText" style="color: #666; margin-top: 5px; display: block;">
+                            <small id="rejectHelpText" class="help-text">
                                 • 駁回給申請人：申請人可修正後重新提交<br>
                                 • 駁回給上一層：要求上一層重新審核
                             </small>
@@ -1069,7 +1196,7 @@
                         <!-- 管理員特殊駁回選項 -->
                         <div id="adminRejectOptions" class="form-group" style="display: none;">
                             <label>管理員駁回至</label>
-                            <select id="adminRejectTo" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <select id="adminRejectTo" class="form-control">
                                 <option value="APPLICANT">駁回給申請人</option>
                                 <option value="EHS">駁回給職環安</option>
                                 <option value="MANAGER">駁回給再生經理</option>

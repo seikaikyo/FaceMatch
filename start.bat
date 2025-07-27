@@ -18,13 +18,25 @@ echo - 💾 SQLite 資料庫持久化
 echo.
 
 echo Step 1: 啟動後端服務 (Port 5001)...
-start "FaceMatch 後端 API" cmd /k "cd /d %~dp0 && node server.js"
+echo 正在背景啟動後端服務...
+start "" /b node server.js
 
 echo 等待後端初始化...
 timeout /t 3 /nobreak >nul
 
 echo Step 2: 啟動前端服務 (Port 3002)...
-start "FaceMatch 前端" cmd /k "cd /d %~dp0 && node static-server.js"
+echo 正在背景啟動前端服務...
+start "" /b node static-server.js
+
+echo.
+echo 🔄 服務正在後台啟動中...
+echo 💡 提示: 服務已在背景執行，關閉此視窗會停止所有服務
+echo.
+echo 等待服務完全啟動...
+timeout /t 5 /nobreak >nul
+
+echo 🎉 啟動完成！正在開啟瀏覽器...
+start http://localhost:3002
 
 echo.
 echo ==========================================
