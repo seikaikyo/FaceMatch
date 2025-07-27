@@ -110,8 +110,15 @@ coverage/
 *.bak
 *.backup
 
+# 測試檔案 (根目錄的臨時測試檔)
+test-*.js
+debug-*.js
+
 # Package lock files (uncomment if using npm)
 # package-lock.json
 
 # Yarn lock file (uncomment if using yarn)
 # yarn.lock
+
+# Claude 設定檔案
+.claude/

@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>FaceMatch 極簡管理系統</title>
+    <title>FaceMatch 企業管理系統</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,60 +14,97 @@
         }
 
         body {
-            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d2d5f 100%);
             min-height: 100vh;
-            color: #333;
+            color: #e4e4e7;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-top: 20px;
-            margin-bottom: 20px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-top: 24px;
+            margin-bottom: 24px;
         }
 
         .header {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
             color: white;
-            padding: 20px;
+            padding: 32px 24px;
             text-align: center;
-            margin: -20px -20px 20px -20px;
-            border-radius: 10px 10px 0 0;
+            margin: -24px -24px 32px -24px;
+            border-radius: 16px 16px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+            opacity: 0.1;
+        }
+        
+        .header h1 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .nav {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         .nav button {
-            padding: 10px 20px;
-            background: #f5f5f5;
-            border: none;
-            border-radius: 5px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #e4e4e7;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         }
 
         .nav button.active {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
         }
 
         .nav button:hover {
-            background: #ddd;
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
         .nav button.active:hover {
-            background: #45a049;
+            background: linear-gradient(135deg, #5855eb 0%, #7c3aed 100%);
+            transform: translateY(-2px);
         }
 
         .flex {
@@ -76,12 +115,19 @@
         }
 
         .card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .form-group {
@@ -90,59 +136,128 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e4e4e7;
+            font-size: 14px;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e7;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(228, 228, 231, 0.6);
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 5px;
-            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
         }
 
-        .btn-primary { background: #007bff; color: white; }
-        .btn-primary:hover { background: #0056b3; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #1e7e34; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-danger:hover { background: #c82333; }
+        .btn-primary { 
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover { 
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover { 
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+        .btn-danger { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover { 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e4e4e7;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
         }
 
         table th, table td {
-            padding: 12px;
+            padding: 16px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         table th {
-            background: #f8f9fa;
-            font-weight: bold;
-            color: #495057;
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #e4e4e7;
+            font-size: 14px;
+            letter-spacing: 0.5px;
         }
 
         table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        table td {
+            color: #d1d5db;
         }
 
         .status-badge {
@@ -152,27 +267,28 @@
             font-weight: bold;
         }
 
-        .status-active { background: #d4edda; color: #155724; }
-        .status-inactive { background: #f8d7da; color: #721c24; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-approved { background: #d1ecf1; color: #0c5460; }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-valid { background: #d4edda; color: #155724; }
-        .status-expires-soon { background: #fff3cd; color: #856404; }
-        .status-expired { background: #f8d7da; color: #721c24; }
-        .status-suspended { background: #e2e3e5; color: #383d41; }
-        .status-success { background: #d4edda; color: #155724; }
-        .status-failed { background: #f8d7da; color: #721c24; }
-        .status-rejected { background: #f8d7da; color: #721c24; }
-        .status-returned { background: #fff3cd; color: #856404; }
-        .status-returned-to-applicant { background: #fff3cd; color: #856404; }
+        .status-active { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .status-inactive { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .status-pending { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .status-approved { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+        .status-completed { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .status-valid { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .status-expires-soon { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .status-expired { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .status-suspended { background: linear-gradient(135deg, #6b7280, #4b5563); color: white; }
+        .status-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .status-failed { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .status-rejected { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .status-returned { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .status-returned-to-applicant { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
 
         .approval-section {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 15px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+            backdrop-filter: blur(10px);
         }
 
         .approval-actions {
@@ -182,39 +298,48 @@
         }
 
         .history-item {
-            border-left: 3px solid #007bff;
-            padding-left: 15px;
-            margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 0 4px 4px 0;
+            border-left: 4px solid #6366f1;
+            padding-left: 20px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 16px 20px;
+            border-radius: 0 12px 12px 0;
+            backdrop-filter: blur(10px);
+            color: #d1d5db;
         }
 
-        .history-approved { border-left-color: #28a745; }
-        .history-rejected { border-left-color: #dc3545; }
-        .history-returned { border-left-color: #ffc107; }
+        .history-approved { border-left-color: #10b981; }
+        .history-rejected { border-left-color: #ef4444; }
+        .history-returned { border-left-color: #f59e0b; }
 
         .approval-info {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px 0;
             font-size: 14px;
+            color: #d1d5db;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .login-form {
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.3);
         }
 
         .login-form h2 {
             text-align: center;
-            margin-bottom: 30px;
-            color: #4CAF50;
+            margin-bottom: 40px;
+            color: #e4e4e7;
+            font-weight: 700;
+            font-size: 2rem;
         }
 
         .hidden {
@@ -222,28 +347,88 @@
         }
 
         .message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
         }
 
         .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
         }
 
+        /* 響應式設計 */
         @media (max-width: 768px) {
-            .nav { flex-direction: column; }
-            .flex { flex-direction: column; align-items: stretch; gap: 10px; }
-            table { font-size: 12px; }
-            .btn { padding: 8px 12px; font-size: 12px; }
+            .container {
+                margin: 12px;
+                padding: 16px;
+            }
+            
+            .header {
+                margin: -16px -16px 24px -16px;
+                padding: 24px 16px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .nav { 
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .flex { 
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 12px; 
+            }
+            
+            table { 
+                font-size: 12px;
+                overflow-x: auto;
+                display: block;
+                white-space: nowrap;
+            }
+            
+            .btn { 
+                padding: 10px 16px; 
+                font-size: 12px; 
+            }
+            
+            .login-form {
+                margin: 40px 12px;
+                padding: 32px 24px;
+            }
+        }
+        
+        /* 滾動條樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -251,7 +436,7 @@
     <div id="app">
         <!-- 登入表單 -->
         <div id="loginSection" class="login-form">
-            <h2>FaceMatch 管理系統</h2>
+            <h2><i class="fas fa-shield-alt"></i> FaceMatch 企業管理系統</h2>
             <div id="loginMessage"></div>
             
             <!-- 驗證方式選擇 -->
@@ -290,7 +475,7 @@
         <!-- 主系統 -->
         <div id="mainSystem" class="container hidden">
             <div class="header">
-                <h1>FaceMatch 極簡管理系統</h1>
+                <h1><i class="fas fa-shield-alt"></i> FaceMatch 企業管理系統</h1>
                 <div style="display: flex; align-items: center; gap: 20px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>當前角色:</span>
@@ -307,20 +492,20 @@
             </div>
             
             <div class="nav">
-                <button class="tab-btn active" data-tab="contractors">承攬商管理</button>
-                <button class="tab-btn" data-tab="workorders">施工單管理</button>
-                <button class="tab-btn" data-tab="approvals">待簽核清單</button>
-                <button class="tab-btn" data-tab="users">使用者管理</button>
-                <button class="tab-btn" data-tab="qualifications">年度資格管理</button>
-                <button class="tab-btn" data-tab="facematch">FaceMatch 整合</button>
-                <button class="tab-btn" data-tab="logs">操作日誌</button>
+                <button class="tab-btn active" data-tab="contractors"><i class="fas fa-building"></i> 承攬商管理</button>
+                <button class="tab-btn" data-tab="workorders"><i class="fas fa-clipboard-list"></i> 施工單管理</button>
+                <button class="tab-btn" data-tab="approvals"><i class="fas fa-check-circle"></i> 待簽核清單</button>
+                <button class="tab-btn" data-tab="users"><i class="fas fa-users"></i> 使用者管理</button>
+                <button class="tab-btn" data-tab="qualifications"><i class="fas fa-certificate"></i> 年度資格管理</button>
+                <button class="tab-btn" data-tab="facematch"><i class="fas fa-user-check"></i> FaceMatch 整合</button>
+                <button class="tab-btn" data-tab="logs"><i class="fas fa-history"></i> 操作日誌</button>
             </div>
             
             <!-- 承攬商管理 -->
             <div id="contractors" class="tab-content">
                 <div class="flex">
-                    <h2>承攬商管理</h2>
-                    <button class="btn btn-primary" onclick="showForm('contractor')">新增承攬商</button>
+                    <h2><i class="fas fa-building"></i> 承攬商管理</h2>
+                    <button class="btn btn-primary" onclick="showForm('contractor')"><i class="fas fa-plus"></i> 新增承攬商</button>
                 </div>
                 
                 <div id="contractorForm" class="card hidden">
