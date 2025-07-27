@@ -3,46 +3,47 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
       
-    - name: Build backend
-      run: npm run build:backend
-      
-    - name: Install frontend dependencies
-      run: cd client && npm ci
-      
-    - name: Build frontend
-      run: npm run build:frontend
-      
-    - name: Create demo build
+    - name: Create demo site
       run: |
-        mkdir -p demo
-        cp -r client/build/* demo/
-        cp static/index.html demo/demo.html
-        echo '{"message": "Demo mode - Backend APIs are mocked"}' > demo/api-status.json
+        mkdir -p _site
+        cp static/demo.html _site/index.html
+        cp static/index.html _site/app.html
+        mkdir -p _site/static
+        cp static/* _site/static/ 2>/dev/null || true
+        echo '# FaceMatch 企業管理系統展示
+
+        ## 🚀 展示頁面
+        - [系統展示](index.html) - 精美的功能展示頁面
+        - [完整系統](app.html) - 完整的系統界面
+        
+        ## 🔗 相關連結
+        - [GitHub 原始碼](https://github.com/seikaikyo/FaceMatch)
+        - [API 文檔](https://github.com/seikaikyo/FaceMatch/blob/main/src/docs/openapi.yml)
+        - [部署指南](https://github.com/seikaikyo/FaceMatch/blob/main/DEPLOYMENT.md)
+        
+        **專案特色**: 100% TypeScript 後端 | 42 個 API 端點 | 企業級簽核工作流程' > _site/README.md
+        
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
         
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./demo
-        cname: facematch.example.com  # 可選：自定義域名
+      id: deployment
+      uses: actions/deploy-pages@v4

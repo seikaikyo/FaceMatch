@@ -20,7 +20,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src/**/*.ts",
-    "clean": "rm -rf dist && rm -rf logs/*.log"
+    "clean": "rm -rf dist && rm -rf logs/*.log",
+    "demo": "node demo-server.js",
+    "demo:open": "node demo-server.js & sleep 2 && open http://localhost:8000"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
