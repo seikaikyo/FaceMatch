@@ -3,6 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+import YAML from 'yamljs';
+import path from 'path';
 import { config } from './config';
 import connectDatabase from './config/database';
 import logger from './utils/logger';
@@ -33,13 +37,47 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Swagger API 文檔設定
+const swaggerSpec = YAML.load(path.join(__dirname, 'docs', 'openapi.yml'));
+
+// Swagger UI 設定
+const swaggerOptions = {
+  explorer: true,
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+    tagsSorter: 'alpha',
+    operationsSorter: 'alpha'
+  },
+  customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { color: #3b82f6; }
+    .swagger-ui .scheme-container { background: #f8fafc; border: 1px solid #e2e8f0; }
+  `,
+  customSiteTitle: 'FaceMatch API 文檔',
+  customfavIcon: '/favicon.ico'
+};
+
+// API 文檔路由
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
+
 // 健康檢查
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    version: config.system.siteVersion
+    version: config.system.siteVersion,
+    docs: '/api-docs'
   });
+});
+
+// API 文檔 JSON 端點
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // API 路由

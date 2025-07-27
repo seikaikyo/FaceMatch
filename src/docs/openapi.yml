@@ -1,0 +1,772 @@
+openapi: 3.0.3
+info:
+  title: FaceMatch 企業級管理系統 API
+  description: |
+    FaceMatch 承攬商管理系統的完整 REST API 文檔
+    
+    ## 功能特色
+    - 🔐 企業級 AD 驗證 + 本地帳號支援
+    - 👥 承攬商管理 (完整 CRUD)
+    - 📋 施工單管理 + 多層級簽核工作流程
+    - 🎓 年度資格管理 + 快速操作
+    - 👤 使用者管理 + 角色權限控制
+    - 📊 企業級操作日誌追蹤
+    - ⚡ FaceMatch 整合管理
+    
+    ## 認證方式
+    使用 Bearer Token 進行 API 認證
+    
+  version: 2.1.3
+  contact:
+    name: FaceMatch 技術支援
+    email: support@facematch.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5001
+    description: 開發環境
+  - url: https://api.facematch.local
+    description: 生產環境
+
+paths:
+  # 認證系統
+  /api/login:
+    post:
+      tags:
+        - 認證系統
+      summary: 使用者登入
+      description: 支援 AD 網域驗證和本地帳號登入
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: 使用者名稱
+                  example: "admin"
+                password:
+                  type: string
+                  description: 密碼
+                  example: "admin123"
+                useAD:
+                  type: boolean
+                  description: 是否使用 AD 驗證
+                  default: false
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: JWT Token
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # 承攬商管理
+  /api/contractors:
+    get:
+      tags:
+        - 承攬商管理
+      summary: 取得承攬商列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE]
+          description: 篩選狀態
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: 搜尋關鍵字
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: 頁碼
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 每頁筆數
+      responses:
+        '200':
+          description: 成功取得承攬商列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contractor'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    post:
+      tags:
+        - 承攬商管理
+      summary: 建立承攬商
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractorCreate'
+      responses:
+        '201':
+          description: 成功建立承攬商
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Contractor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/contractors/{id}:
+    get:
+      tags:
+        - 承攬商管理
+      summary: 取得特定承攬商
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 承攬商 ID
+      responses:
+        '200':
+          description: 成功取得承攬商
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Contractor'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    put:
+      tags:
+        - 承攬商管理
+      summary: 更新承攬商
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 承攬商 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractorUpdate'
+      responses:
+        '200':
+          description: 成功更新承攬商
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Contractor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    delete:
+      tags:
+        - 承攬商管理
+      summary: 刪除承攬商
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 承攬商 ID
+      responses:
+        '200':
+          description: 成功刪除承攬商
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "承攬商已成功刪除"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # 施工單管理
+  /api/work-orders:
+    get:
+      tags:
+        - 施工單管理
+      summary: 取得施工單列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, EHS_APPROVED, MANAGER_APPROVED, REJECTED, COMPLETED]
+          description: 篩選狀態
+        - in: query
+          name: contractorId
+          schema:
+            type: integer
+          description: 承攬商 ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: 頁碼
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 每頁筆數
+      responses:
+        '200':
+          description: 成功取得施工單列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkOrder'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # 簽核管理
+  /api/work-orders/pending-approval:
+    get:
+      tags:
+        - 簽核管理
+      summary: 取得待簽核清單
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功取得待簽核清單
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkOrder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/approvals/{id}/ehs:
+    post:
+      tags:
+        - 簽核管理
+      summary: 職環安簽核
+      description: 職環安層級的簽核操作 (核准/駁回)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 施工單 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+                  description: 簽核動作
+                comment:
+                  type: string
+                  description: 簽核意見
+                  example: "安全措施完備，核准執行"
+      responses:
+        '200':
+          description: 簽核成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/WorkOrder'
+                  message:
+                    type: string
+                    example: "職環安簽核完成"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 使用者 ID
+          example: 1
+        username:
+          type: string
+          description: 使用者名稱
+          example: "admin"
+        name:
+          type: string
+          description: 姓名
+          example: "系統管理員"
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+          example: "admin@facematch.com"
+        role:
+          type: string
+          enum: [ADMIN, EHS, MANAGER, USER]
+          description: 使用者角色
+          example: "ADMIN"
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          description: 帳號狀態
+          example: "ACTIVE"
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新時間
+
+    Contractor:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 承攬商 ID
+          example: 1
+        name:
+          type: string
+          description: 承攬商名稱
+          example: "台積電承攬商"
+        code:
+          type: string
+          description: 承攬商代碼
+          example: "TSMC001"
+        contact:
+          type: string
+          description: 聯絡人
+          example: "張三"
+        phone:
+          type: string
+          description: 聯絡電話
+          example: "02-1234-5678"
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+          example: "contact@tsmc-contractor.com"
+        address:
+          type: string
+          description: 地址
+          example: "新竹科學園區"
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          description: 狀態
+          example: "ACTIVE"
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新時間
+
+    ContractorCreate:
+      type: object
+      required:
+        - name
+        - code
+        - contact
+        - phone
+      properties:
+        name:
+          type: string
+          description: 承攬商名稱
+          example: "新承攬商"
+        code:
+          type: string
+          description: 承攬商代碼 (唯一)
+          example: "NEW001"
+        contact:
+          type: string
+          description: 聯絡人
+          example: "李四"
+        phone:
+          type: string
+          description: 聯絡電話
+          example: "02-2345-6789"
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+          example: "contact@new-contractor.com"
+        address:
+          type: string
+          description: 地址
+          example: "台北市信義區"
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          description: 狀態
+          default: "ACTIVE"
+
+    ContractorUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 承攬商名稱
+        contact:
+          type: string
+          description: 聯絡人
+        phone:
+          type: string
+          description: 聯絡電話
+        email:
+          type: string
+          format: email
+          description: 電子郵件
+        address:
+          type: string
+          description: 地址
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          description: 狀態
+
+    WorkOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 施工單 ID
+          example: 1
+        title:
+          type: string
+          description: 施工單標題
+          example: "機台維護工程"
+        description:
+          type: string
+          description: 工作描述
+          example: "進行生產線機台定期維護"
+        contractorId:
+          type: integer
+          description: 承攬商 ID
+          example: 1
+        contractor:
+          $ref: '#/components/schemas/Contractor'
+        status:
+          type: string
+          enum: [DRAFT, SUBMITTED, EHS_APPROVED, MANAGER_APPROVED, REJECTED, COMPLETED]
+          description: 施工單狀態
+          example: "SUBMITTED"
+        startDate:
+          type: string
+          format: date
+          description: 開始日期
+          example: "2024-01-15"
+        endDate:
+          type: string
+          format: date
+          description: 結束日期
+          example: "2024-01-20"
+        location:
+          type: string
+          description: 施工地點
+          example: "FAB18 2樓"
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          description: 風險等級
+          example: "MEDIUM"
+        createdBy:
+          type: integer
+          description: 建立者 ID
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新時間
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 當前頁碼
+          example: 1
+        limit:
+          type: integer
+          description: 每頁筆數
+          example: 20
+        total:
+          type: integer
+          description: 總筆數
+          example: 150
+        totalPages:
+          type: integer
+          description: 總頁數
+          example: 8
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: 錯誤代碼
+            message:
+              type: string
+              description: 錯誤訊息
+            details:
+              type: object
+              description: 詳細錯誤資訊
+
+  responses:
+    BadRequest:
+      description: 請求參數錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "請求參數驗證失敗"
+              details:
+                field: "name"
+                message: "名稱為必填欄位"
+
+    Unauthorized:
+      description: 未授權 - 需要登入
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "未授權存取，請先登入"
+
+    Forbidden:
+      description: 禁止存取 - 權限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "FORBIDDEN"
+              message: "權限不足，無法執行此操作"
+
+    NotFound:
+      description: 資源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "NOT_FOUND"
+              message: "請求的資源不存在"
+
+    InternalError:
+      description: 伺服器內部錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "伺服器發生未預期的錯誤"
+
+tags:
+  - name: 認證系統
+    description: 使用者登入驗證相關 API
+  - name: 承攬商管理
+    description: 承攬商 CRUD 操作
+  - name: 施工單管理
+    description: 施工單 CRUD 操作
+  - name: 簽核管理
+    description: 多層級簽核工作流程
+  - name: 年度資格管理
+    description: 年度資格 CRUD 和快速操作
+  - name: 使用者管理
+    description: 使用者帳號和角色管理
+  - name: FaceMatch 整合
+    description: FaceMatch 系統整合管理
+  - name: 企業級日誌
+    description: 操作日誌追蹤和分析
