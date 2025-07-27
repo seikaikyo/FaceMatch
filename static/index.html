@@ -1758,16 +1758,16 @@
                     endpoint.includes(impl.replace('/api', ''))
                 );
                 if (isImplemented) {
-                    return API_ENDPOINTS.typescript + endpoint.replace('/api', '');
+                    return API_ENDPOINTS.typescript + endpoint.replace(API_BASE, '');
                 } else {
                     // 未實現的端點自動降級到 Legacy API
                     console.log(`⚠️ ${endpoint} 尚未在 TypeScript API 實現，自動使用 Legacy API`);
-                    return API_ENDPOINTS.legacy + endpoint.replace('/api', '');
+                    return API_ENDPOINTS.legacy + endpoint.replace(API_BASE, '');
                 }
             }
             
-            // Legacy API 或其他情況
-            return API_BASE + endpoint.replace('/api', '');
+            // Legacy API 或其他情況 - 直接返回原 URL
+            return endpoint;
         }
 
         // API 調用函數
