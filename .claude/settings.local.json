@@ -52,7 +52,11 @@
       "Bash(PORT=5002 node dist/app.js)",
       "Bash(./start-ts.sh:*)",
       "Bash(pm2 logs:*)",
-      "Bash(pm2 restart:*)"
+      "Bash(pm2 restart:*)",
+      "Bash(pm2 stop:*)",
+      "Bash(pm2 delete:*)",
+      "Bash(./start-optimized.sh:*)",
+      "Bash(bash:*)"
     ],
     "deny": []
   }
