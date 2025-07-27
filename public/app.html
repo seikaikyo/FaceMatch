@@ -807,6 +807,16 @@
         <!-- 登入表單 -->
         <div id="loginSection" class="login-form">
             <h2><i class="fas fa-shield-alt"></i> FaceMatch 企業管理系統</h2>
+            <div id="deploymentNotice" style="display: none; background: #e3f2fd; border: 1px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: #1565c0;">
+                <h4><i class="fas fa-info-circle"></i> 雲端展示版本說明</h4>
+                <p>您目前在 Vercel 雲端環境中瀏覽此系統。此版本為<strong>前端展示用途</strong>，無法連接後端 API 服務。</p>
+                <p><strong>🚀 如需完整功能體驗：</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>請訪問 <a href="/demo" style="color: #1565c0; text-decoration: underline;">系統展示頁面</a> 了解功能特色</li>
+                    <li>或參考 <a href="https://github.com/seikaikyo/FaceMatch" target="_blank" style="color: #1565c0; text-decoration: underline;">GitHub 專案</a> 進行本地部署</li>
+                </ul>
+                <p><strong>💡 本地部署後可體驗：</strong>42個API端點、完整簽核工作流程、企業級認證系統等功能</p>
+            </div>
             <div id="loginMessage"></div>
             
             <!-- 驗證方式選擇 -->
@@ -1471,7 +1481,9 @@
 
     <script>
         // API 配置 (統一使用 TypeScript 後端)
-        const API_BASE = 'http://localhost:5001/api';
+        // 檢測環境：本地開發 vs 雲端部署
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const API_BASE = isLocalhost ? 'http://localhost:5001/api' : null;
         let currentAPIVersion = 'typescript';
         let currentUser = null;
         let currentTab = 'contractors';
@@ -1610,7 +1622,21 @@
         
         // 初始化時載入 AD 配置
         window.addEventListener('load', () => {
-            loadADConfig();
+            // 檢查是否為雲端環境
+            if (!API_BASE) {
+                // 顯示雲端部署說明
+                document.getElementById('deploymentNotice').style.display = 'block';
+                // 隱藏登入表單的實際輸入部分
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.style.opacity = '0.5';
+                    loginForm.style.pointerEvents = 'none';
+                }
+                console.log('🌐 雲端展示模式 - 無後端 API 連接');
+            } else {
+                loadADConfig();
+                console.log('🏠 本地開發模式 - 後端 API:', API_BASE);
+            }
             
             // 為使用者表單添加事件監聽器
             if (document.getElementById('userRole')) {
