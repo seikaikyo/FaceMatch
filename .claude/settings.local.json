@@ -46,7 +46,13 @@
       "Bash(npm test)",
       "Bash(pm2 start:*)",
       "Bash(pm2 status:*)",
-      "Bash(./start-pm2.sh:*)"
+      "Bash(./start-pm2.sh:*)",
+      "Bash(npm init:*)",
+      "Bash(jobs)",
+      "Bash(PORT=5002 node dist/app.js)",
+      "Bash(./start-ts.sh:*)",
+      "Bash(pm2 logs:*)",
+      "Bash(pm2 restart:*)"
     ],
     "deny": []
   }

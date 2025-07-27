@@ -97,7 +97,7 @@ const startServer = async () => {
     // 嘗試連接資料庫，如果失敗則使用模擬資料
     try {
       await connectDatabase();
-      logger.info('🗄️ 使用 MongoDB 資料庫');
+      logger.info('🗄️ 使用 SQLite 資料庫');
       
       // 建立種子資料
       await seedDatabase();
