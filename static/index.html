@@ -1653,24 +1653,39 @@
 
         // 簽核功能相關變數
         let currentApprovalId = null;
-        let currentUserRole = '管理員';
+        let currentUserRole = 'ADMIN'; // 預設為管理員
 
         // 角色切換功能
         function switchRole() {
             const roleSelect = document.getElementById('currentRole');
-            currentUserRole = roleSelect.value;
-            document.getElementById('userName').textContent = currentUserRole;
+            const selectedRole = roleSelect.value;
+            document.getElementById('userName').textContent = selectedRole;
+            
+            // 轉換為英文角色代碼
+            const roleMapping = {
+                '管理員': 'ADMIN',
+                '職環安': 'EHS', 
+                '再生經理': 'MANAGER',
+                '一般使用者': 'CONTRACTOR'
+            };
+            
+            currentUserRole = roleMapping[selectedRole] || 'CONTRACTOR';
             
             // 根據角色顯示/隱藏功能
             updateUIForRole();
             
-            console.log(`已切換到角色: ${currentUserRole}`);
+            // 重新整理頁面以更新權限和資料
+            setTimeout(() => {
+                location.reload();
+            }, 100);
+            
+            console.log(`已切換到角色: ${selectedRole} (${currentUserRole})`);
         }
 
         function updateUIForRole() {
-            const isManager = currentUserRole === '管理員';
-            const isJobSafety = currentUserRole === '職環安';
-            const isRegenManager = currentUserRole === '再生經理';
+            const isManager = currentUserRole === 'ADMIN';
+            const isJobSafety = currentUserRole === 'EHS';
+            const isRegenManager = currentUserRole === 'MANAGER';
             
             // 管理員可以看到所有功能
             // 職環安和再生經理只能看到待簽核清單和相關功能
@@ -1850,8 +1865,19 @@
                     • 駁回給上一層職環安：要求職環安重新審核
                 `;
                 console.log('經理用戶：顯示兩個駁回選項');
+            } else if (currentUserRole === 'ADMIN') {
+                // 管理員擁有完整的駁回選項
+                rejectToSelect.innerHTML = `
+                    <option value="APPLICANT">駁回給申請人</option>
+                    <option value="PREVIOUS_LEVEL">駁回給上一層職環安</option>
+                `;
+                rejectHelpText.innerHTML = `
+                    • 駁回給申請人：申請人可修正後重新提交<br>
+                    • 駁回給上一層職環安：要求職環安重新審核
+                `;
+                console.log('管理員用戶：顯示完整駁回選項');
             } else {
-                // 其他角色（如管理員）默認只能駁回給申請人
+                // 其他角色默認只能駁回給申請人
                 rejectToSelect.innerHTML = '<option value="APPLICANT">駁回給申請人</option>';
                 rejectHelpText.innerHTML = '• 駁回給申請人：申請人可修正後重新提交';
             }
