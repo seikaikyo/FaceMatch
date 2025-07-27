@@ -15,9 +15,19 @@ cp .env.example .env
 
 ### 啟動系統
 
-#### 🚀 PM2 啟動 (推薦)
+#### 🚀 TypeScript + OpenAPI 啟動 (最新推薦)
 ```bash
-# Linux/WSL 一鍵啟動
+# Linux/WSL TypeScript 版本
+./start-ts.sh
+
+# 或手動啟動 TypeScript 服務
+npm run build:backend           # 編譯 TypeScript
+pm2 start ecosystem.config.js --only facematch-backend-ts
+```
+
+#### 🔄 Legacy JavaScript 啟動
+```bash
+# Linux/WSL Legacy 版本
 ./start-pm2.sh
 
 # 或手動使用 PM2
@@ -46,8 +56,17 @@ node static-server.js        # 前端 (Port 3002)
 
 ## 🌐 系統地址
 
+### TypeScript 版本 (推薦)
 - **前端**: http://localhost:3002
-- **後端 API**: http://localhost:5001  
+- **TypeScript API**: http://localhost:5002
+- **📖 API 文檔**: http://localhost:5002/api-docs
+- **🔍 健康檢查**: http://localhost:5002/health
+
+### Legacy JavaScript 版本
+- **前端**: http://localhost:3002
+- **JavaScript API**: http://localhost:5001
+
+### 登入帳號
 - **管理員登入**: `admin` / (請查看 .env 檔案中的 DEFAULT_ADMIN_PASSWORD)
 - **測試帳號**: 
   - 職環安: `safety` / (DEFAULT_SAFETY_PASSWORD)
@@ -121,9 +140,17 @@ node static-server.js        # 前端 (Port 3002)
 - **純 HTML/CSS/JavaScript** - 輕量化前端
 - **響應式設計** - 適配各種螢幕尺寸
 - **模組化設計** - 易於維護和擴展
-- **React 版本** (client/) - 未來開發備用
+- **React 版本** (client/) - 現代化 UI 框架
 
-### 後端
+### 後端 (雙版本支援)
+#### TypeScript 版本 (推薦)
+- **TypeScript + Express** - 型別安全的後端框架
+- **OpenAPI 3.0** - 標準化 API 規範
+- **Swagger UI** - 互動式 API 文檔
+- **路徑別名** - 清晰的模組導入結構
+- **嚴格型別檢查** - 編譯時錯誤檢測
+
+#### Legacy JavaScript 版本
 - **Node.js + Express** - 高效能後端框架
 - **SQLite** - 輕量級關係型資料庫
 - **Sequelize ORM** - 資料庫操作抽象層
@@ -137,25 +164,36 @@ node static-server.js        # 前端 (Port 3002)
 - **Active Directory 整合**
 - **完整操作日誌追蹤**
 - **資料完整性保護**
+- **API 文檔與測試** - Swagger UI 整合
 
 ## 📁 專案結構
 
 ```
 FaceMatch/
-├── server.js                  # 主要後端服務 (企業級功能)
+├── server.js                  # Legacy JavaScript 後端服務
 ├── static-server.js           # 靜態檔案服務
 ├── start.bat                  # Windows 啟動腳本
-├── start-pm2.sh               # Linux/WSL PM2 啟動腳本
-├── ecosystem.config.js        # PM2 配置檔案
+├── start-pm2.sh               # Legacy PM2 啟動腳本
+├── start-ts.sh                # TypeScript PM2 啟動腳本 ⭐
+├── ecosystem.config.js        # PM2 配置檔案 (雙版本支援)
+├── tsconfig.json              # TypeScript 配置檔案 ⭐
+├── package.json               # NPM 依賴和腳本
 ├── logs/                      # PM2 日誌目錄
+├── dist/                      # TypeScript 編譯輸出 ⭐
 ├── static/
 │   └── index.html             # 主要前端應用
-├── src/                       # TypeScript 後端架構 (未來開發)
+├── src/                       # TypeScript 後端架構 ⭐
+│   ├── app.ts                # 主要應用程式入口點
 │   ├── controllers/           # 控制器層
 │   ├── models/               # 資料模型層
 │   ├── routes/               # 路由層  
 │   ├── services/             # 業務邏輯層
-│   └── middleware/           # 中間件
+│   ├── middleware/           # 中間件
+│   ├── types/                # TypeScript 型別定義
+│   ├── utils/                # 工具函數
+│   ├── config/               # 配置檔案
+│   └── docs/                 # OpenAPI 文檔 ⭐
+│       └── openapi.yml       # API 規範檔案
 ├── client/                   # React 前端 (未來開發)
 │   └── src/                  # React 元件
 ├── tests/                    # 測試檔案
@@ -273,7 +311,15 @@ FaceMatch/
 
 ## 📝 版本歷史
 
-### v2.1.3 - PM2 進程管理整合 (最新)
+### v2.2.0 - TypeScript + OpenAPI 企業級升級 (最新)
+- ✅ **TypeScript 後端** - 完整型別安全的企業級架構
+- ✅ **OpenAPI 3.0 規範** - 標準化 REST API 文檔和規範
+- ✅ **Swagger UI 整合** - 互動式 API 文檔和測試介面
+- ✅ **企業級開發體驗** - 路徑別名、嚴格型別檢查、自動編譯
+- ✅ **雙後端支援** - Legacy JS (Port 5001) + TypeScript (Port 5002)
+- ✅ **PM2 整合** - 支援 TypeScript 服務的進程管理
+
+### v2.1.3 - PM2 進程管理整合
 - ✅ **PM2 整合** - 新增 PM2 進程管理，支援生產環境部署
 - ✅ **跨平台啟動** - Linux/WSL 使用 PM2，Windows 保持 start.bat
 - ✅ **服務監控** - PM2 提供進程監控、自動重啟、日誌管理
