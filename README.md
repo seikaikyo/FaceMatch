@@ -14,6 +14,21 @@ cp .env.example .env
 ```
 
 ### 啟動系統
+
+#### 🚀 PM2 啟動 (推薦)
+```bash
+# Linux/WSL 一鍵啟動
+./start-pm2.sh
+
+# 或手動使用 PM2
+pm2 start ecosystem.config.js   # 啟動服務
+pm2 status                       # 查看狀態
+pm2 logs                         # 查看日誌
+pm2 stop all                     # 停止服務
+pm2 restart all                  # 重啟服務
+```
+
+#### 🪟 Windows 啟動
 ```bash
 # Windows 一鍵啟動
 ./start.bat
@@ -22,6 +37,11 @@ cp .env.example .env
 node server.js               # 後端 (Port 5001)
 node static-server.js        # 前端 (Port 3002)
 ```
+
+### 💡 部署說明
+- **PM2 管理**: 生產環境推薦使用 PM2，支援自動重啟、日誌管理、進程監控
+- **跨平台支援**: WSL/Linux 使用 PM2，Windows 使用 start.bat
+- **服務監控**: PM2 提供實時狀態監控和自動故障恢復
 
 ## 🌐 系統地址
 
@@ -124,6 +144,9 @@ FaceMatch/
 ├── server.js                  # 主要後端服務 (企業級功能)
 ├── static-server.js           # 靜態檔案服務
 ├── start.bat                  # Windows 啟動腳本
+├── start-pm2.sh               # Linux/WSL PM2 啟動腳本
+├── ecosystem.config.js        # PM2 配置檔案
+├── logs/                      # PM2 日誌目錄
 ├── static/
 │   └── index.html             # 主要前端應用
 ├── src/                       # TypeScript 後端架構 (未來開發)
@@ -249,7 +272,19 @@ FaceMatch/
 
 ## 📝 版本歷史
 
-### v2.1.1 - 權限擴展與工作流程修復 (最新)
+### v2.1.3 - PM2 進程管理整合 (最新)
+- ✅ **PM2 整合** - 新增 PM2 進程管理，支援生產環境部署
+- ✅ **跨平台啟動** - Linux/WSL 使用 PM2，Windows 保持 start.bat
+- ✅ **服務監控** - PM2 提供進程監控、自動重啟、日誌管理
+- ✅ **部署優化** - 適合 Rocky Linux VM 和企業環境部署
+
+### v2.1.2 - 部署優化與 UI 改進
+- ✅ **修正多視窗問題** - start.bat 優化為單一視窗背景執行
+- ✅ **深色模式改進** - 完善模態框和元素的深色模式樣式
+- ✅ **部署友好** - 適合跨電腦部署，避免多視窗干擾用戶體驗
+- ✅ **UI 樣式統一** - 所有表單元素和按鈕在深淺模式下的一致性
+
+### v2.1.1 - 權限擴展與工作流程修復
 - ✅ **擴展職環安和再生經理權限** - 新增承攬商管理功能權限
 - ✅ **修復工單創建流程** - 正確支援 DRAFT 狀態和提交流程
 - ✅ **環境變數密碼系統** - 完整的 .env 配置和安全密碼管理
