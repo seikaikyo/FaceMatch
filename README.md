@@ -4,6 +4,16 @@
 
 ## 🚀 快速啟動
 
+### ⚠️ 首次設定
+```bash
+# 1. 複製環境變數範例檔案
+cp .env.example .env
+
+# 2. 修改 .env 中的密碼（重要！）
+# 請參考 SECURITY.md 了解安全設定
+```
+
+### 啟動系統
 ```bash
 # Windows 一鍵啟動
 ./start.bat
@@ -17,8 +27,12 @@ node static-server.js        # 前端 (Port 3002)
 
 - **前端**: http://localhost:3002
 - **後端 API**: http://localhost:5001  
-- **管理員登入**: `admin` / `admin123`
-- **測試帳號**: `safety` / `safety123` (職環安), `manager` / `manager123` (再生經理)
+- **管理員登入**: `admin` / (請查看 .env 檔案中的 DEFAULT_ADMIN_PASSWORD)
+- **測試帳號**: 
+  - 職環安: `safety` / (DEFAULT_SAFETY_PASSWORD)
+  - 再生經理: `manager` / (DEFAULT_MANAGER_PASSWORD)
+
+⚠️ **重要**: 首次使用請修改 .env 檔案中的預設密碼！詳見 [SECURITY.md](SECURITY.md)
 
 ## ✨ 核心功能
 
@@ -209,12 +223,14 @@ FaceMatch/
 
 ## 🔒 企業級安全特性
 
-- 🛡️ **密碼安全雜湊** - bcrypt 加密儲存
+- 🛡️ **密碼安全雜湊** - bcrypt 加密儲存，可調整 salt rounds
 - 🔐 **Active Directory 整合** - 企業網域單一登入
 - 👥 **角色基礎存取控制** - 細粒度權限管理
 - 📊 **操作日誌追蹤** - 完整稽核軌跡
 - 🔒 **帳號狀態控制** - 即時啟用/停用
 - ⚡ **工作流程控制** - 多層級簽核保護
+- 🔑 **環境變數配置** - 機敏資料與代碼分離
+- 🛡️ **安全配置指南** - 詳細的生產環境安全設定
 
 ## 📈 系統統計
 
