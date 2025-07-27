@@ -7,6 +7,7 @@ import contractorsRoutes from './contractors';
 import workOrdersRoutes from './work-orders';
 import approvalsRoutes from './approvals';
 import authRoutes from './auth';
+import facematchRoutes from './facematch';
 
 const router = Router();
 
@@ -33,5 +34,8 @@ router.use('/approvals', approvalsRoutes);
 
 // 年度資格管理路由
 router.use('/qualifications', qualificationRoutes);
+
+// 人臉辨識管理路由
+router.use('/facematch', facematchRoutes);
 
 export default router;
