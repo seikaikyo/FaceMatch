@@ -3,38 +3,30 @@
   "name": "facematch-system",
   "builds": [
     {
-      "src": "dist/app.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    },
-    {
-      "src": "client/build/**",
+      "src": "static/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/app.js"
+      "src": "/index.html",
+      "dest": "/static/index.html"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "src": "/demo.html",
+      "dest": "/static/demo.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/client/build/index.html"
+      "src": "/demo",
+      "dest": "/static/demo.html"
+    },
+    {
+      "src": "/app",
+      "dest": "/static/index.html"
+    },
+    {
+      "src": "/",
+      "dest": "/static/demo.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "PORT": "3000"
-  },
-  "functions": {
-    "dist/app.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
