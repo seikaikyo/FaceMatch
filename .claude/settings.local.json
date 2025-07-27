@@ -43,7 +43,10 @@
       "Bash(grep:*)",
       "Bash(git reset:*)",
       "Bash(fuser:*)",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(pm2 start:*)",
+      "Bash(pm2 status:*)",
+      "Bash(./start-pm2.sh:*)"
     ],
     "deny": []
   }
