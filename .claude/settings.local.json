@@ -56,7 +56,10 @@
       "Bash(pm2 stop:*)",
       "Bash(pm2 delete:*)",
       "Bash(./start-optimized.sh:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(vercel:*)",
+      "WebFetch(domain:facematch-system-i5i9r15go-seikaikyos-projects.vercel.app)",
+      "WebFetch(domain:facematch-system-ombzp6hcc-seikaikyos-projects.vercel.app)"
     ],
     "deny": []
   }

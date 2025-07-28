@@ -122,3 +122,4 @@ debug-*.js
 
 # Claude 設定檔案
 .claude/
+.vercel

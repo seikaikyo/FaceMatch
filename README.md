@@ -63,9 +63,14 @@ npm run restart:pm2   # 重啟服務
 - **📊 管理介面**: http://localhost:5001/static
 
 ### ☁️ 雲端部署環境
-- **🚀 Vercel 生產環境**: https://facematch-system-8i76wsxkr-seikaikyos-projects.vercel.app
+- **🚀 Vercel 生產環境**: https://facematch-system-f1j3rih5s-seikaikyos-projects.vercel.app
+  - 專案首頁: https://facematch-system-f1j3rih5s-seikaikyos-projects.vercel.app/
+  - 系統展示: https://facematch-system-f1j3rih5s-seikaikyos-projects.vercel.app/demo
+  - 完整系統: https://facematch-system-f1j3rih5s-seikaikyos-projects.vercel.app/app (前端展示，含雲端說明)
 - **📊 GitHub Pages 展示**: https://seikaikyo.github.io/FaceMatch
 - **🎯 本地展示服務**: `npm run demo` → http://localhost:8000
+
+> **💡 說明**: 雲端版本為前端展示用途，完整功能需本地部署後端 API
 
 ### 預設登入帳號
 - **系統管理員**: `admin` / `admin123`
